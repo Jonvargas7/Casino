@@ -20,12 +20,14 @@ public class VentanaRegistro extends JFrame {
     private JPasswordField txtContrasena = new JPasswordField(15);
     private JTextField txtFecha = new JTextField(15);
     private JComboBox<String> jcbPais = new JComboBox<>(new String[]{
-            "España","Francia","Alemania","Japón","China","Estados Unidos","Bélgica","Reino Unido"
-    });
+    	    "España", "Italia", "Portugal", "México", "Argentina", 
+    	    "Brasil", "Canadá", "Australia", "Suecia", "Noruega"
+    	});
 
-    private JCheckBox chkPrivacidad = new JCheckBox("He leído y acepto la política de privacidad");
-    private JLabel lblMayorEdad = new JLabel("⚠️ Debes ser mayor de 18 años");
-    private JButton btnRegistro = new JButton("Registrarse");
+    	private JCheckBox chkPrivacidad = new JCheckBox("Confirmo que he leído y acepto las condiciones de privacidad");
+    	private JLabel lblMayorEdad = new JLabel("⚠️ Solo disponible para mayores de 18 años");
+    	private JButton btnRegistro = new JButton("Crear cuenta");
+
 
     private final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 

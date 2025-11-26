@@ -12,10 +12,10 @@ public class VentanaInicio extends JFrame {
     private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger("VentanaInicioCasino");
 
-    private JPanel pPrincipal = new JPanel(new GridLayout(2, 2, 20, 20));
+    private JPanel pPrincipal = new JPanel(new GridLayout(2, 2, 25, 25));
     private JPanel barraSuperior = new JPanel(new BorderLayout());
-    private JPanel pBotonesSuperior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
-    private JPanel pTitulo = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+    private JPanel pCentroSuperior = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 10));
+    private JPanel pTitulo = new JPanel(new FlowLayout(FlowLayout.LEFT, 25, 10));
 
     private JButton bJuego1 = new JButton("");
     private JButton bJuego2 = new JButton("");
@@ -37,66 +37,62 @@ public class VentanaInicio extends JFrame {
 
         setIconImage(new ImageIcon(propiedades.getProperty("favicon")).getImage());
 
-        // Barra superior verde
-        barraSuperior.setBackground(new Color(34, 85, 55)); // verde elegante
-        barraSuperior.setPreferredSize(new Dimension(900, 70));
+        // 🎨 Barra superior azul marino
+        Color azulOscuro = new Color(20, 30, 70);
+        barraSuperior.setBackground(azulOscuro);
+        barraSuperior.setPreferredSize(new Dimension(900, 80));
 
-        JLabel titulo = new JLabel("Casino");
-        titulo.setForeground(Color.WHITE);
-        titulo.setFont(new Font("SansSerif", Font.BOLD, 22));
+        JLabel titulo = new JLabel("Casino Royale");
+        titulo.setForeground(new Color(255, 215, 0)); // Dorado
+        titulo.setFont(new Font("Serif", Font.BOLD, 26));
 
-        JButton bJuegos = new JButton("🎮 Juegos");
-        bJuegos.setBackground(Color.WHITE);
-        bJuegos.setFont(new Font("SansSerif", Font.BOLD, 14));
-
-        pTitulo.setBackground(new Color(34, 85, 55));
-        pBotonesSuperior.setBackground(new Color(34, 85, 55));
-
-        pTitulo.add(bJuegos);
-        pTitulo.add(Box.createHorizontalStrut(10));
+        pTitulo.setBackground(azulOscuro);
         pTitulo.add(titulo);
 
-        bLogin.setBackground(Color.WHITE);
-        bSignUp.setBackground(Color.WHITE);
-        pBotonesSuperior.add(bLogin);
-        pBotonesSuperior.add(bSignUp);
+        // 🔘 Botones centrados en la parte superior
+        pCentroSuperior.setBackground(azulOscuro);
+        configurarBotonSuperior(bLogin);
+        configurarBotonSuperior(bSignUp);
+        pCentroSuperior.add(bLogin);
+        pCentroSuperior.add(bSignUp);
 
         barraSuperior.add(pTitulo, BorderLayout.WEST);
-        barraSuperior.add(pBotonesSuperior, BorderLayout.EAST);
+        barraSuperior.add(pCentroSuperior, BorderLayout.CENTER);
         add(barraSuperior, BorderLayout.NORTH);
 
-        // Panel principal
-        pPrincipal.setBackground(Color.WHITE);
+        // 🎮 Panel de juegos
+        pPrincipal.setBackground(new Color(245, 245, 250));
         pPrincipal.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        configurarBoton(bJuego1, propiedades.getProperty("blackJack"), "BlackJack");
-        configurarBoton(bJuego2, propiedades.getProperty("highlow"), "High-Low");
-        configurarBoton(bJuego3, propiedades.getProperty("ruleta"), "Ruleta");
+        configurarBotonJuego(bJuego1, propiedades.getProperty("blackJack"), "BlackJack");
+        configurarBotonJuego(bJuego2, propiedades.getProperty("highlow"), "High-Low");
+        configurarBotonJuego(bJuego3, propiedades.getProperty("ruleta"), "Ruleta");
 
         pPrincipal.add(crearPanelJuego(bJuego1));
         pPrincipal.add(crearPanelJuego(bJuego2));
         pPrincipal.add(crearPanelJuego(bJuego3));
+        pPrincipal.add(new JLabel("")); // espacio vacío para equilibrio visual
 
         add(pPrincipal, BorderLayout.CENTER);
 
-        // Acciones de los botones
+        // 🧠 Acciones de los botones
         bJuego1.addActionListener(e -> abrirVentana("BlackJack"));
         bJuego2.addActionListener(e -> abrirVentana("High-Low"));
         bJuego3.addActionListener(e -> abrirVentana("Ruleta"));
 
-        bLogin.addActionListener(e -> JOptionPane.showMessageDialog(this, "Ventana de Login (pendiente)"));
+        bLogin.addActionListener(e -> JOptionPane.showMessageDialog(this, "Aquí irá la ventana de Login"));
         bSignUp.addActionListener(e -> new VentanaRegistro());
 
         setVisible(true);
     }
 
-    private void configurarBoton(JButton boton, String ruta, String tooltip) {
+    private void configurarBotonJuego(JButton boton, String ruta, String tooltip) {
         boton.setBorder(null);
         boton.setBackground(Color.WHITE);
         boton.setToolTipText(tooltip);
         if (ruta != null ) {
             ImageIcon icono = new ImageIcon(ruta);
-            Image img = icono.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
+            Image img = icono.getImage().getScaledInstance(240, 240, Image.SCALE_SMOOTH);
             boton.setIcon(new ImageIcon(img));
         }
     }
@@ -107,6 +103,15 @@ public class VentanaInicio extends JFrame {
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
         panel.add(boton, BorderLayout.CENTER);
         return panel;
+    }
+
+    private void configurarBotonSuperior(JButton boton) {
+        boton.setBackground(new Color(255, 215, 0)); // Dorado
+        boton.setForeground(Color.BLACK);
+        boton.setFont(new Font("SansSerif", Font.BOLD, 14));
+        boton.setFocusPainted(false);
+        boton.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
     private void abrirVentana(String nombreJuego) {
@@ -122,3 +127,4 @@ public class VentanaInicio extends JFrame {
         SwingUtilities.invokeLater(VentanaInicio::new);
     }
 }
+
