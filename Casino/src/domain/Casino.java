@@ -21,19 +21,41 @@ public class Casino {
         this.partidas = partidas;
     }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+  
 
-    public String getVersion() { return version; }
-    public void setVersion(String version) { this.version = version; }
+    public String getNombre() {
+		return nombre;
+	}
 
-    public List<Jugador> getJugadores() { return jugadores; }
-    public void setJugadores(List<Jugador> jugadores) { this.jugadores = jugadores; }
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
 
-    public List<Partida> getPartidas() { return partidas; }
-    public void setPartidas(List<Partida> partidas) { this.partidas = partidas; }
+	public String getVersion() {
+		return version;
+	}
 
-    @Override
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public List<Jugador> getJugadores() {
+		return jugadores;
+	}
+
+	public void setJugadores(List<Jugador> jugadores) {
+		this.jugadores = jugadores;
+	}
+
+	public List<Partida> getPartidas() {
+		return partidas;
+	}
+
+	public void setPartidas(List<Partida> partidas) {
+		this.partidas = partidas;
+	}
+
+	@Override
     public String toString() {
         return "Casino{" +
                 "nombre='" + nombre + '\'' +

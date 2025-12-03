@@ -17,16 +17,34 @@ public class Blackjack extends Juego {
         this.apuestaMax = apuestaMax;
     }
 
-    public int getMazos() { return mazos; }
-    public void setMazos(int mazos) { this.mazos = mazos; }
+    
+    
 
-    public double getApuestaMin() { return apuestaMin; }
-    public void setApuestaMin(double apuestaMin) { this.apuestaMin = apuestaMin; }
+    public int getMazos() {
+		return mazos;
+	}
 
-    public double getApuestaMax() { return apuestaMax; }
-    public void setApuestaMax(double apuestaMax) { this.apuestaMax = apuestaMax; }
+	public void setMazos(int mazos) {
+		this.mazos = mazos;
+	}
 
-    @Override
+	public double getApuestaMin() {
+		return apuestaMin;
+	}
+
+	public void setApuestaMin(double apuestaMin) {
+		this.apuestaMin = apuestaMin;
+	}
+
+	public double getApuestaMax() {
+		return apuestaMax;
+	}
+
+	public void setApuestaMax(double apuestaMax) {
+		this.apuestaMax = apuestaMax;
+	}
+
+	@Override
     public String toString() {
         return "Blackjack{" +
                 "id=" + getId() +

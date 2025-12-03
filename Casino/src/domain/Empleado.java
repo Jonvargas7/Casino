@@ -17,16 +17,33 @@ public class Empleado extends Usuario {
         this.fechaInicio = fechaInicio;
     }
 
-    public String getPuesto() { return puesto; }
-    public void setPuesto(String puesto) { this.puesto = puesto; }
+   
 
-    public boolean isActivo() { return activo; }
-    public void setActivo(boolean activo) { this.activo = activo; }
+    public String getPuesto() {
+		return puesto;
+	}
 
-    public LocalDateTime getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(LocalDateTime fechaInicio) { this.fechaInicio = fechaInicio; }
+	public void setPuesto(String puesto) {
+		this.puesto = puesto;
+	}
 
-    @Override
+	public boolean isActivo() {
+		return activo;
+	}
+
+	public void setActivo(boolean activo) {
+		this.activo = activo;
+	}
+
+	public LocalDateTime getFechaInicio() {
+		return fechaInicio;
+	}
+
+	public void setFechaInicio(LocalDateTime fechaInicio) {
+		this.fechaInicio = fechaInicio;
+	}
+
+	@Override
     public String toString() {
         return "Empleado{" +
                 "id=" + getId() +

@@ -21,25 +21,57 @@ public abstract class Usuario {
         this.rol = rol;
     }
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public long getId() {
+		return id;
+	}
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+	public void setId(long id) {
+		this.id = id;
+	}
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+	public String getNombre() {
+		return nombre;
+	}
 
-    public LocalDateTime getFechaRegistro() { return fechaRegistro; }
-    public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
 
-    public RolUsuario getRol() { return rol; }
-    public void setRol(RolUsuario rol) { this.rol = rol; }
+	public String getEmail() {
+		return email;
+	}
 
-    @Override
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public LocalDateTime getFechaRegistro() {
+		return fechaRegistro;
+	}
+
+	public void setFechaRegistro(LocalDateTime fechaRegistro) {
+		this.fechaRegistro = fechaRegistro;
+	}
+
+	public RolUsuario getRol() {
+		return rol;
+	}
+
+	public void setRol(RolUsuario rol) {
+		this.rol = rol;
+	}
+
+	@Override
     public String toString() {
         return "Usuario{" +
                 "id=" + id +

@@ -18,13 +18,25 @@ public class Ruleta extends Juego {
     }
 
     
-    public double getApuestaMin() { return apuestaMin; }
-    public void setApuestaMin(double apuestaMin) { this.apuestaMin = apuestaMin; }
+    
 
-    public double getApuestaMax() { return apuestaMax; }
-    public void setApuestaMax(double apuestaMax) { this.apuestaMax = apuestaMax; }
+    public double getApuestaMin() {
+		return apuestaMin;
+	}
 
-    @Override
+	public void setApuestaMin(double apuestaMin) {
+		this.apuestaMin = apuestaMin;
+	}
+
+	public double getApuestaMax() {
+		return apuestaMax;
+	}
+
+	public void setApuestaMax(double apuestaMax) {
+		this.apuestaMax = apuestaMax;
+	}
+
+	@Override
     public String toString() {
         return "Ruleta{" +
                 "id=" + getId() +

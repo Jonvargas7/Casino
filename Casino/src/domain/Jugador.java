@@ -19,19 +19,40 @@ public class Jugador extends Usuario {
         this.nivel = nivel;
     }
 
-    public double getSaldo() { return saldo; }
-    public void setSaldo(double saldo) { this.saldo = saldo; }
 
-    public int getNumeroDePartidas() { return numeroDePartidas; }
-    public void setNumeroDePartidas(int numeroDePartidas) { this.numeroDePartidas = numeroDePartidas; }
+    public double getSaldo() {
+		return saldo;
+	}
 
-    public double getTotalGanado() { return totalGanado; }
-    public void setTotalGanado(double totalGanado) { this.totalGanado = totalGanado; }
+	public void setSaldo(double saldo) {
+		this.saldo = saldo;
+	}
 
-    public int getNivel() { return nivel; }
-    public void setNivel(int nivel) { this.nivel = nivel; }
+	public int getNumeroDePartidas() {
+		return numeroDePartidas;
+	}
 
-    @Override
+	public void setNumeroDePartidas(int numeroDePartidas) {
+		this.numeroDePartidas = numeroDePartidas;
+	}
+
+	public double getTotalGanado() {
+		return totalGanado;
+	}
+
+	public void setTotalGanado(double totalGanado) {
+		this.totalGanado = totalGanado;
+	}
+
+	public int getNivel() {
+		return nivel;
+	}
+
+	public void setNivel(int nivel) {
+		this.nivel = nivel;
+	}
+
+	@Override
     public String toString() {
         return "Jugador{" +
                 "id=" + getId() +

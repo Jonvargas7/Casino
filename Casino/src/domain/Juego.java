@@ -17,19 +17,41 @@ public abstract class Juego {
         this.activo = activo;
     }
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+  
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public long getId() {
+		return id;
+	}
 
-    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
-    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+	public void setId(long id) {
+		this.id = id;
+	}
 
-    public boolean isActivo() { return activo; }
-    public void setActivo(boolean activo) { this.activo = activo; }
+	public String getNombre() {
+		return nombre;
+	}
 
-    @Override
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
+	public LocalDateTime getFechaCreacion() {
+		return fechaCreacion;
+	}
+
+	public void setFechaCreacion(LocalDateTime fechaCreacion) {
+		this.fechaCreacion = fechaCreacion;
+	}
+
+	public boolean isActivo() {
+		return activo;
+	}
+
+	public void setActivo(boolean activo) {
+		this.activo = activo;
+	}
+
+	@Override
     public String toString() {
         return "Juego{" +
                 "id=" + id +

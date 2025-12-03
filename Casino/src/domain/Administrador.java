@@ -13,10 +13,17 @@ public class Administrador extends Usuario {
         this.nivelAcceso = nivelAcceso;
     }
 
-    public int getNivelAcceso() { return nivelAcceso; }
-    public void setNivelAcceso(int nivelAcceso) { this.nivelAcceso = nivelAcceso; }
+    
 
-    @Override
+    public int getNivelAcceso() {
+		return nivelAcceso;
+	}
+
+	public void setNivelAcceso(int nivelAcceso) {
+		this.nivelAcceso = nivelAcceso;
+	}
+
+	@Override
     public String toString() {
         return "Administrador{" +
                 "id=" + getId() +

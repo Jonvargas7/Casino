@@ -17,16 +17,32 @@ public class HighLow extends Juego {
         this.apuestaMax = apuestaMax;
     }
 
-    public int getMazos() { return mazos; }
-    public void setMazos(int mazos) { this.mazos = mazos; }
+   
+    public int getMazos() {
+		return mazos;
+	}
 
-    public double getApuestaMin() { return apuestaMin; }
-    public void setApuestaMin(double apuestaMin) { this.apuestaMin = apuestaMin; }
+	public void setMazos(int mazos) {
+		this.mazos = mazos;
+	}
 
-    public double getApuestaMax() { return apuestaMax; }
-    public void setApuestaMax(double apuestaMax) { this.apuestaMax = apuestaMax; }
+	public double getApuestaMin() {
+		return apuestaMin;
+	}
 
-    @Override
+	public void setApuestaMin(double apuestaMin) {
+		this.apuestaMin = apuestaMin;
+	}
+
+	public double getApuestaMax() {
+		return apuestaMax;
+	}
+
+	public void setApuestaMax(double apuestaMax) {
+		this.apuestaMax = apuestaMax;
+	}
+
+	@Override
     public String toString() {
         return "HighLow{" +
                 "id=" + getId() +

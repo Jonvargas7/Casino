@@ -21,25 +21,56 @@ public class Partida {
         this.ganancia = ganancia;
     }
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    
+    public long getId() {
+		return id;
+	}
 
-    public long getIdUsuario() { return idUsuario; }
-    public void setIdUsuario(long idUsuario) { this.idUsuario = idUsuario; }
+	public void setId(long id) {
+		this.id = id;
+	}
 
-    public String getJuego() { return juego; }
-    public void setJuego(String juego) { this.juego = juego; }
+	public long getIdUsuario() {
+		return idUsuario;
+	}
 
-    public LocalDateTime getFecha() { return fecha; }
-    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+	public void setIdUsuario(long idUsuario) {
+		this.idUsuario = idUsuario;
+	}
 
-    public String getResultado() { return resultado; }
-    public void setResultado(String resultado) { this.resultado = resultado; }
+	public String getJuego() {
+		return juego;
+	}
 
-    public double getGanancia() { return ganancia; }
-    public void setGanancia(double ganancia) { this.ganancia = ganancia; }
+	public void setJuego(String juego) {
+		this.juego = juego;
+	}
 
-    @Override
+	public LocalDateTime getFecha() {
+		return fecha;
+	}
+
+	public void setFecha(LocalDateTime fecha) {
+		this.fecha = fecha;
+	}
+
+	public String getResultado() {
+		return resultado;
+	}
+
+	public void setResultado(String resultado) {
+		this.resultado = resultado;
+	}
+
+	public double getGanancia() {
+		return ganancia;
+	}
+
+	public void setGanancia(double ganancia) {
+		this.ganancia = ganancia;
+	}
+
+	@Override
     public String toString() {
         return "Partida{" +
                 "id=" + id +
