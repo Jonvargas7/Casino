@@ -1,7 +1,6 @@
 package gui;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -35,21 +34,23 @@ public class VentanaInicio extends JFrame {
         propiedades = new Propiedades();
         propiedades.cargar();
 
-        setIconImage(new ImageIcon(propiedades.getProperty("favicon")).getImage());
+        String fav = propiedades.getProperty("favicon");
+        if (fav != null) {
+            Image img = new ImageIcon(fav).getImage();
+            setIconImage(img);
+        }
 
-        // 🎨 Barra superior azul marino
         Color azulOscuro = new Color(20, 30, 70);
         barraSuperior.setBackground(azulOscuro);
         barraSuperior.setPreferredSize(new Dimension(900, 80));
 
         JLabel titulo = new JLabel("Casino Royale");
-        titulo.setForeground(new Color(255, 215, 0)); // Dorado
+        titulo.setForeground(new Color(255, 215, 0));
         titulo.setFont(new Font("Serif", Font.BOLD, 26));
 
         pTitulo.setBackground(azulOscuro);
         pTitulo.add(titulo);
 
-        // 🔘 Botones centrados en la parte superior
         pCentroSuperior.setBackground(azulOscuro);
         configurarBotonSuperior(bLogin);
         configurarBotonSuperior(bSignUp);
@@ -60,7 +61,6 @@ public class VentanaInicio extends JFrame {
         barraSuperior.add(pCentroSuperior, BorderLayout.CENTER);
         add(barraSuperior, BorderLayout.NORTH);
 
-        // 🎮 Panel de juegos
         pPrincipal.setBackground(new Color(245, 245, 250));
         pPrincipal.setBorder(new EmptyBorder(20, 20, 20, 20));
 
@@ -71,14 +71,13 @@ public class VentanaInicio extends JFrame {
         pPrincipal.add(crearPanelJuego(bJuego1));
         pPrincipal.add(crearPanelJuego(bJuego2));
         pPrincipal.add(crearPanelJuego(bJuego3));
-        pPrincipal.add(new JLabel("")); // espacio vacío para equilibrio visual
+        pPrincipal.add(new JLabel(""));
 
         add(pPrincipal, BorderLayout.CENTER);
 
-        // 🧠 Acciones de los botones
-        bJuego1.addActionListener(e -> abrirVentana("BlackJack"));
-        bJuego2.addActionListener(e -> abrirVentana("High-Low"));
-        bJuego3.addActionListener(e -> abrirVentana("Ruleta"));
+        bJuego1.addActionListener(e -> abrirBlackJack());
+        bJuego2.addActionListener(e -> abrirHighLow());
+        bJuego3.addActionListener(e -> abrirRuleta());
 
         bLogin.addActionListener(e -> JOptionPane.showMessageDialog(this, "Aquí irá la ventana de Login"));
         bSignUp.addActionListener(e -> new VentanaRegistro());
@@ -90,7 +89,7 @@ public class VentanaInicio extends JFrame {
         boton.setBorder(null);
         boton.setBackground(Color.WHITE);
         boton.setToolTipText(tooltip);
-        if (ruta != null ) {
+        if (ruta != null) {
             ImageIcon icono = new ImageIcon(ruta);
             Image img = icono.getImage().getScaledInstance(240, 240, Image.SCALE_SMOOTH);
             boton.setIcon(new ImageIcon(img));
@@ -106,7 +105,7 @@ public class VentanaInicio extends JFrame {
     }
 
     private void configurarBotonSuperior(JButton boton) {
-        boton.setBackground(new Color(255, 215, 0)); // Dorado
+        boton.setBackground(new Color(255, 215, 0));
         boton.setForeground(Color.BLACK);
         boton.setFont(new Font("SansSerif", Font.BOLD, 14));
         boton.setFocusPainted(false);
@@ -114,17 +113,34 @@ public class VentanaInicio extends JFrame {
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    private void abrirVentana(String nombreJuego) {
-        JFrame ventanaJuego = new JFrame(nombreJuego);
-        ventanaJuego.setSize(400, 300);
-        ventanaJuego.setLocationRelativeTo(this);
-        ventanaJuego.add(new JLabel("Aquí irá la lógica de " + nombreJuego, SwingConstants.CENTER), BorderLayout.CENTER);
-        ventanaJuego.setVisible(true);
-        logger.info("Se ha abierto la ventana de " + nombreJuego);
+    private void abrirBlackJack() {
+        try {
+            new VentanaBlackJack().setVisible(true);
+            logger.info("Se ha abierto la ventana de BlackJack");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo abrir BlackJack");
+        }
+    }
+
+    private void abrirHighLow() {
+        try {
+            new VentanaHighLow().setVisible(true);
+            logger.info("Se ha abierto la ventana de High-Low");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo abrir High-Low");
+        }
+    }
+
+    private void abrirRuleta() {
+        try {
+            new VentanaRuleta().setVisible(true);
+            logger.info("Se ha abierto la ventana de Ruleta");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo abrir Ruleta");
+        }
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(VentanaInicio::new);
     }
 }
-

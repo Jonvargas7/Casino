@@ -1,5 +1,129 @@
 package gui;
 
-public class VentanaHighLow {
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
+public class VentanaHighLow extends JFrame {
+    private double saldo = 1000.0;
+    private final JLabel lblTitulo = new JLabel("High–Low", SwingConstants.CENTER);
+    private final JLabel lblSaldo = new JLabel();
+    private final JTextField txtApuesta = new JTextField("10", 8);
+    private final JComboBox<String> cmbDecision = new JComboBox<>(new String[]{"Mayor","Menor"});
+    private final JButton btnNueva = new JButton("Nueva ronda");
+    private final JButton btnRevelar = new JButton("Revelar");
+    private final JLabel lblCartaActual = new JLabel("Carta actual: -", SwingConstants.CENTER);
+    private final JLabel lblCartaNueva = new JLabel("Carta nueva: -", SwingConstants.CENTER);
+    private final JLabel lblResultado = new JLabel("Listo", SwingConstants.CENTER);
+
+    private final List<Integer> baraja = new ArrayList<>();
+    private final Random rnd = new Random();
+    private int cartaActual = -1;
+
+    public VentanaHighLow() {
+        setTitle("High–Low");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(520, 420);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10,10));
+
+        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 20));
+        JPanel top = new JPanel(new BorderLayout());
+        top.setBorder(new EmptyBorder(10,10,0,10));
+        top.add(lblTitulo, BorderLayout.CENTER);
+        add(top, BorderLayout.NORTH);
+
+        JPanel panelCentro = new JPanel(new GridLayout(3,1,8,8));
+        panelCentro.setBorder(new EmptyBorder(0,20,0,20));
+        panelCentro.add(lblCartaActual);
+        panelCentro.add(lblCartaNueva);
+        panelCentro.add(lblResultado);
+        add(panelCentro, BorderLayout.CENTER);
+
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
+        acciones.add(new JLabel("Apuesta"));
+        acciones.add(txtApuesta);
+        acciones.add(cmbDecision);
+        acciones.add(btnNueva);
+        acciones.add(btnRevelar);
+        add(acciones, BorderLayout.SOUTH);
+
+        JPanel derecha = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
+        actualizarSaldo();
+        derecha.add(lblSaldo);
+        add(derecha, BorderLayout.EAST);
+
+        btnNueva.addActionListener(e -> nuevaRonda());
+        btnRevelar.addActionListener(e -> revelar());
+
+        prepararBaraja();
+        nuevaRonda();
+        setVisible(true);
+    }
+
+    private void prepararBaraja() {
+        baraja.clear();
+        for (int v=1; v<=13; v++) for (int s=0; s<4; s++) baraja.add(v);
+        Collections.shuffle(baraja, rnd);
+    }
+
+    private int robar() {
+        if (baraja.isEmpty()) prepararBaraja();
+        return baraja.remove(baraja.size()-1);
+    }
+
+    private String cartaTxt(int v) {
+        if (v==1) return "A";
+        if (v==11) return "J";
+        if (v==12) return "Q";
+        if (v==13) return "K";
+        return Integer.toString(v);
+    }
+
+    private void actualizarSaldo() {
+        lblSaldo.setText("Saldo: " + String.format("%.2f", saldo));
+    }
+
+    private double leerApuesta() {
+        try {
+            double a = Double.parseDouble(txtApuesta.getText().trim());
+            if (a<=0 || a>saldo) return -1;
+            return a;
+        } catch(Exception e){ return -1; }
+    }
+
+    private void nuevaRonda() {
+        if (baraja.size()<2) prepararBaraja();
+        cartaActual = robar();
+        lblCartaActual.setText("Carta actual: " + cartaTxt(cartaActual));
+        lblCartaNueva.setText("Carta nueva: -");
+        lblResultado.setText("Elige y revela");
+    }
+
+    private void revelar() {
+        double a = leerApuesta();
+        if (a<=0) { JOptionPane.showMessageDialog(this, "Apuesta inválida"); return; }
+        int nueva = robar();
+        lblCartaNueva.setText("Carta nueva: " + cartaTxt(nueva));
+        String dec = cmbDecision.getSelectedItem().toString();
+        boolean mayor = nueva>cartaActual;
+        boolean menor = nueva<cartaActual;
+        boolean empate = nueva==cartaActual;
+        boolean acierto = (dec.equals("Mayor") && mayor) || (dec.equals("Menor") && menor);
+        double delta = empate ? 0 : (acierto ? a : -a);
+        saldo += delta;
+        actualizarSaldo();
+        lblResultado.setText((empate?"Empate":(acierto?"Acierto":"Fallo"))+" ("+String.format("%+.2f", delta)+")");
+        cartaActual = nueva;
+        lblCartaActual.setText("Carta actual: " + cartaTxt(cartaActual));
+    }
+
+    public static void main(String[] args) { SwingUtilities.invokeLater(VentanaHighLow::new); }
 }
