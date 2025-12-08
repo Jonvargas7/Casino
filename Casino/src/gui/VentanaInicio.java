@@ -6,6 +6,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import io.Propiedades;
 
+// Importar Database, necesario para pasar a la VentanaLogin/Registro
+import gestor.Database; 
+
 public class VentanaInicio extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -20,17 +23,23 @@ public class VentanaInicio extends JFrame {
     private JButton bJuego2 = new JButton("");
     private JButton bJuego3 = new JButton("");
     private JButton bLogin = new JButton("Login");
-    private JButton bSignUp = new JButton("Sign up");
+    private JButton bSignUp = new JButton("Sign up"); 
+    
+    private Database database; 
 
     private Propiedades propiedades;
 
-    public VentanaInicio() {
+
+    public VentanaInicio(Database database) { 
+        this.database = database;
+        
         setTitle("Casino");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 700);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
+    
         propiedades = new Propiedades();
         propiedades.cargar();
 
@@ -79,27 +88,54 @@ public class VentanaInicio extends JFrame {
         bJuego2.addActionListener(e -> abrirHighLow());
         bJuego3.addActionListener(e -> abrirRuleta());
 
-        bLogin.addActionListener(e -> JOptionPane.showMessageDialog(this, "Aquí irá la ventana de Login"));
-        bSignUp.addActionListener(e -> new VentanaRegistro());
+       
+        bLogin.addActionListener(e -> abrirLogin());
+        
+        bSignUp.addActionListener(e -> abrirRegistro());
 
-        setVisible(true);
+        
+    }
+    
+    private void abrirLogin() {
+        
+        new VentanaLogin(database).setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
+        new VentanaLogin(database).setVisible(true);
+        logger.info("Se ha abierto la ventana de Login");
+    }
+    
+    private void abrirRegistro() {
+        
+        new VentanaRegistro(this, database).setVisible(true);
+        logger.info("Se ha abierto la ventana de Registro de Jugador");
     }
 
+
+  
+
     private void configurarBotonJuego(JButton boton, String ruta, String tooltip) {
-        boton.setBorder(null);
-        boton.setBackground(Color.WHITE);
-        boton.setToolTipText(tooltip);
         if (ruta != null) {
-            ImageIcon icono = new ImageIcon(ruta);
-            Image img = icono.getImage().getScaledInstance(240, 240, Image.SCALE_SMOOTH);
-            boton.setIcon(new ImageIcon(img));
+            
+            try {
+                ImageIcon icon = new ImageIcon(ruta);
+                Image img = icon.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                boton.setIcon(new ImageIcon(img));
+            } catch (Exception e) {
+               
+                boton.setText(tooltip);
+            }
+        } else {
+             boton.setText(tooltip);
         }
+        boton.setToolTipText(tooltip);
+        boton.setPreferredSize(new Dimension(250, 250));
+        boton.setBackground(new Color(240, 240, 250));
+        boton.setBorder(BorderFactory.createLineBorder(new Color(150, 150, 150), 2));
     }
 
     private JPanel crearPanelJuego(JButton boton) {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panel.setBackground(new Color(245, 245, 250));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panel.add(boton, BorderLayout.CENTER);
         return panel;
     }
@@ -114,33 +150,17 @@ public class VentanaInicio extends JFrame {
     }
 
     private void abrirBlackJack() {
-        try {
-            new VentanaBlackJack().setVisible(true);
-            logger.info("Se ha abierto la ventana de BlackJack");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo abrir BlackJack");
-        }
+         JOptionPane.showMessageDialog(this, "Funcionalidad de BlackJack aún no implementada.");
+        // Aquí iría new VentanaBlackJack().setVisible(true);
     }
 
     private void abrirHighLow() {
-        try {
-            new VentanaHighLow().setVisible(true);
-            logger.info("Se ha abierto la ventana de High-Low");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo abrir High-Low");
-        }
+         JOptionPane.showMessageDialog(this, "Funcionalidad de High-Low aún no implementada.");
+        // Aquí iría new VentanaHighLow().setVisible(true);
     }
 
     private void abrirRuleta() {
-        try {
-            new VentanaRuleta().setVisible(true);
-            logger.info("Se ha abierto la ventana de Ruleta");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo abrir Ruleta");
-        }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(VentanaInicio::new);
+         JOptionPane.showMessageDialog(this, "Funcionalidad de Ruleta aún no implementada.");
+        // Aquí iría new VentanaRuleta().setVisible(true);
     }
 }

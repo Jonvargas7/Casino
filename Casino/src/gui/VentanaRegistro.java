@@ -1,144 +1,119 @@
-package gui;
+package gui; 
 
-import java.awt.*;
-import java.awt.event.*;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
+import domain.Jugador;
+import gestor.Database; 
+
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import java.awt.*;
+import java.time.LocalDateTime;
+import java.util.logging.Logger;
 
-public class VentanaRegistro extends JFrame {
+public class VentanaRegistro extends JDialog {
+    
+    private static final Logger logger = Logger.getLogger("VentanaRegistroCasino");
+    private Database database;
 
-    private static final long serialVersionUID = 1L;
+    private JTextField nameField;
+    private JTextField emailField;
+    private JPasswordField passwordField;
+    private JTextField initialBalanceField;
 
-    private JTextField txtNombre = new JTextField(15);
-    private JTextField txtApellidos = new JTextField(15);
-    private JTextField txtDNI = new JTextField(15);
-    private JTextField txtUsuario = new JTextField(15);
-    private JPasswordField txtContrasena = new JPasswordField(15);
-    private JTextField txtFecha = new JTextField(15);
-    private JComboBox<String> jcbPais = new JComboBox<>(new String[]{
-    	    "España", "Italia", "Portugal", "México", "Argentina", 
-    	    "Brasil", "Canadá", "Australia", "Suecia", "Noruega"
-    	});
+    /**
+     * Constructor para VentanaRegistro.
+     * @param parent La ventana padre (típicamente VentanaInicio o VentanaLogin).
+     * @param database La instancia de la base de datos/gestor.
+     */
+    public VentanaRegistro(JFrame parent, Database database) {
+        
+        super(parent, "Registro de Nuevo Jugador", true); 
+        this.database = database;
+        
+        setLayout(new BorderLayout(10, 10));
+        
+        
+        JPanel fieldPanel = new JPanel(new GridLayout(5, 2, 10, 10));
+        
+        fieldPanel.add(new JLabel("Nombre Completo:"));
+        nameField = new JTextField(20);
+        fieldPanel.add(nameField);
 
-    	private JCheckBox chkPrivacidad = new JCheckBox("Confirmo que he leído y acepto las condiciones de privacidad");
-    	private JLabel lblMayorEdad = new JLabel("⚠️ Solo disponible para mayores de 18 años");
-    	private JButton btnRegistro = new JButton("Crear cuenta");
+        fieldPanel.add(new JLabel("Email (único):"));
+        emailField = new JTextField(20);
+        fieldPanel.add(emailField);
 
+        fieldPanel.add(new JLabel("Contraseña:"));
+        passwordField = new JPasswordField(20);
+        fieldPanel.add(passwordField);
 
-    private final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        fieldPanel.add(new JLabel("Saldo Inicial (€):"));
+        initialBalanceField = new JTextField("0.0", 20);
+        fieldPanel.add(initialBalanceField);
+        
+        fieldPanel.add(new JLabel("Rol:"));
+        fieldPanel.add(new JLabel("JUGADOR")); // Rol fijo
 
-    public VentanaRegistro() {
-        setTitle("Registro");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(420, 480); 
-        setLocationRelativeTo(null);
-
-        JPanel content = new JPanel(new BorderLayout(10, 8));
-        content.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-        setContentPane(content);
-
-        JLabel titulo = new JLabel("Registro de usuario", SwingConstants.CENTER);
-        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 16f));
-        content.add(titulo, BorderLayout.NORTH);
-
-        JPanel form = new JPanel(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(4,4,4,4);
-        c.anchor = GridBagConstraints.WEST;
-
-        int row = 0;
-        addRow(form, c, row++, new JLabel("País de residencia:"), jcbPais);
-        addRow(form, c, row++, new JLabel("DNI:"), txtDNI);
-        addRow(form, c, row++, new JLabel("Nombre:"), txtNombre);
-        addRow(form, c, row++, new JLabel("Apellidos:"), txtApellidos);
-        addRow(form, c, row++, new JLabel("Fecha de nacimiento (yyyy-MM-dd):"), txtFecha);
-        addRow(form, c, row++, new JLabel("Usuario:"), txtUsuario);
-        addRow(form, c, row++, new JLabel("Contraseña:"), txtContrasena);
-
-        JPanel bottom = new JPanel(new GridLayout(0,1,6,6));
-        lblMayorEdad.setForeground(new Color(170, 0, 0));
-        lblMayorEdad.setVisible(false);
-        bottom.add(chkPrivacidad);
-        bottom.add(lblMayorEdad);
-
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnRegistro.setEnabled(false);
-        acciones.add(btnRegistro);
-        bottom.add(acciones);
-
-        content.add(form, BorderLayout.CENTER);
-        content.add(bottom, BorderLayout.SOUTH);
-
-        txtFecha.setToolTipText("Formato: yyyy-MM-dd (ej: 2000-05-21)");
-
-        DocumentListener refrescar = new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { actualizarEstado(); }
-            @Override public void removeUpdate(DocumentEvent e) { actualizarEstado(); }
-            @Override public void changedUpdate(DocumentEvent e) { actualizarEstado(); }
-        };
-        txtNombre.getDocument().addDocumentListener(refrescar);
-        txtApellidos.getDocument().addDocumentListener(refrescar);
-        txtDNI.getDocument().addDocumentListener(refrescar);
-        txtUsuario.getDocument().addDocumentListener(refrescar);
-        txtContrasena.getDocument().addDocumentListener(refrescar);
-        txtFecha.getDocument().addDocumentListener(refrescar);
-        chkPrivacidad.addActionListener(e -> actualizarEstado());
-
-        btnRegistro.addActionListener(e -> {
-            if (!esMayorDeEdad()) {
-                JOptionPane.showMessageDialog(this, "Debes ser mayor de 18 años.", "Edad insuficiente", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            JOptionPane.showMessageDialog(this,
-                    "Registro completado:\n" +
-                    "- Nombre: " + txtNombre.getText() + " " + txtApellidos.getText() + "\n" +
-                    "- DNI: " + txtDNI.getText() + "\n" +
-                    "- Usuario: " + txtUsuario.getText() + "\n" +
-                    "- País: " + jcbPais.getSelectedItem(),
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            dispose();
-        });
-
-        setVisible(true);
+        
+        JButton registerButton = new JButton("Confirmar Registro");
+        registerButton.addActionListener(e -> performRegistration());
+        
+        
+        add(fieldPanel, BorderLayout.CENTER);
+        add(registerButton, BorderLayout.SOUTH);
+        ((JComponent) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        pack();
+        setLocationRelativeTo(parent);
     }
 
-    private void addRow(JPanel panel, GridBagConstraints c, int row, JComponent label, JComponent field) {
-        c.gridx = 0; c.gridy = row; c.weightx = 0; c.fill = GridBagConstraints.NONE;
-        panel.add(label, c);
-        c.gridx = 1; c.gridy = row; c.weightx = 1; c.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(field, c);
-    }
+    private void performRegistration() {
+        String name = nameField.getText().trim();
+        String email = emailField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        double initialBalance;
 
-    private void actualizarEstado() {
-        boolean completos = !txtNombre.getText().isEmpty()
-                && !txtApellidos.getText().isEmpty()
-                && !txtDNI.getText().isEmpty()
-                && !txtUsuario.getText().isEmpty()
-                && txtContrasena.getPassword().length > 0
-                && !txtFecha.getText().isEmpty();
-
-        boolean mayorEdad = esMayorDeEdad();
-        lblMayorEdad.setVisible(!mayorEdad && !txtFecha.getText().isEmpty());
-
-        boolean privacidadOk = chkPrivacidad.isSelected();
-
-        btnRegistro.setEnabled(completos && mayorEdad && privacidadOk);
-    }
-
-    private boolean esMayorDeEdad() {
-        try {
-            LocalDate nacimiento = LocalDate.parse(txtFecha.getText().trim(), FMT);
-            return Period.between(nacimiento, LocalDate.now()).getYears() >= 18;
-        } catch (Exception e) {
-            return false;
+       
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-    }
+        
+        try {
+            initialBalance = Double.parseDouble(initialBalanceField.getText().replace(',', '.')); // Soporta coma decimal
+            if (initialBalance < 0) {
+                 JOptionPane.showMessageDialog(this, "El saldo inicial no puede ser negativo.", "Error", JOptionPane.ERROR_MESSAGE);
+                 return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "El saldo debe ser un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(VentanaRegistro::new);
+        
+        Jugador nuevoJugador = new Jugador(
+            0, 
+            name, 
+            email, 
+            password, 
+            LocalDateTime.now(), 
+            initialBalance,
+            0, 
+            0.0, 
+            1 
+        );
+
+        try {
+            
+            database.registrar(nuevoJugador); 
+            logger.info("Registro exitoso para: " + email);
+            JOptionPane.showMessageDialog(this, 
+                "¡Registro exitoso! Ya puedes iniciar sesión.", 
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            dispose(); 
+        } catch (Exception ex) {
+            logger.severe("Error al registrar: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, 
+                "Error al registrar: " + ex.getMessage() + "\nVerifique que el email no esté ya en uso.", 
+                "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
