@@ -1,5 +1,6 @@
 package gui;
 
+import io.Propiedades;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -7,6 +8,7 @@ import java.util.*;
 import java.util.List;
 
 public class VentanaBlackJack extends JFrame {
+
     private double saldo = 1000.0;
     private double apuesta = 0.0;
 
@@ -18,25 +20,32 @@ public class VentanaBlackJack extends JFrame {
     private final JButton btnPedir = new JButton("Pedir");
     private final JButton btnPlantarse = new JButton("Plantarse");
     private final JButton btnDoblar = new JButton("Doblar");
-    private final JLabel lblJugador = new JLabel("Jugador: ", SwingConstants.CENTER);
-    private final JLabel lblBanca = new JLabel("Banca: ", SwingConstants.CENTER);
+
     private final JLabel lblValorJ = new JLabel("Valor: 0", SwingConstants.CENTER);
     private final JLabel lblValorB = new JLabel("Valor: 0", SwingConstants.CENTER);
     private final JLabel lblEstado = new JLabel("Listo", SwingConstants.CENTER);
 
+    private final JPanel panelCartasJugador = new JPanel(new FlowLayout());
+    private final JPanel panelCartasBanca = new JPanel(new FlowLayout());
+
     private final List<Integer> baraja = new ArrayList<>();
     private final Random rnd = new Random();
-    private final java.util.List<Integer> manoJ = new ArrayList<>();
-    private final java.util.List<Integer> manoB = new ArrayList<>();
+    private final List<Integer> manoJ = new ArrayList<>();
+    private final List<Integer> manoB = new ArrayList<>();
+
+    private final Propiedades props = new Propiedades();
 
     public VentanaBlackJack() {
+
+        props.cargar();
+
         setTitle("BlackJack");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(700, 520);
+        setSize(820, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10,10));
 
-        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 20));
+        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 26));
         JPanel top = new JPanel(new BorderLayout());
         top.setBorder(new EmptyBorder(10,10,0,10));
         top.add(lblTitulo, BorderLayout.CENTER);
@@ -51,17 +60,22 @@ public class VentanaBlackJack extends JFrame {
         add(panelInfo, BorderLayout.SOUTH);
 
         JPanel centro = new JPanel(new GridLayout(2,1,10,10));
+
         JPanel pJ = new JPanel(new BorderLayout());
-        pJ.add(lblJugador, BorderLayout.CENTER);
+        pJ.setBorder(BorderFactory.createTitledBorder("Jugador"));
+        pJ.add(panelCartasJugador, BorderLayout.CENTER);
         pJ.add(lblValorJ, BorderLayout.SOUTH);
+
         JPanel pB = new JPanel(new BorderLayout());
-        pB.add(lblBanca, BorderLayout.CENTER);
+        pB.setBorder(BorderFactory.createTitledBorder("Banca"));
+        pB.add(panelCartasBanca, BorderLayout.CENTER);
         pB.add(lblValorB, BorderLayout.SOUTH);
+
         centro.add(pJ);
         centro.add(pB);
         add(centro, BorderLayout.CENTER);
 
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
+        JPanel acciones = new JPanel(new GridLayout(4,1,10,10));
         acciones.add(btnNueva);
         acciones.add(btnPedir);
         acciones.add(btnPlantarse);
@@ -96,18 +110,25 @@ public class VentanaBlackJack extends JFrame {
             JOptionPane.showMessageDialog(this, "Apuesta inválida");
             return;
         }
+
         if (apuesta <= 0 || apuesta > saldo) {
             JOptionPane.showMessageDialog(this, "Apuesta fuera de rango");
             return;
         }
+
         prepararBaraja();
         manoJ.clear();
         manoB.clear();
-        manoJ.add(robar()); manoB.add(robar()); manoJ.add(robar()); manoB.add(robar());
+
+        manoJ.add(robar()); manoB.add(robar());
+        manoJ.add(robar()); manoB.add(robar());
+
         actualizarVista();
+
         lblEstado.setText("Tu turno");
         setBotonesEnJuego(true);
         btnNueva.setEnabled(false);
+
         if (valor(manoJ) == 21) resolverFinal();
     }
 
@@ -128,33 +149,41 @@ public class VentanaBlackJack extends JFrame {
             JOptionPane.showMessageDialog(this, "Solo con dos cartas");
             return;
         }
+
         if (apuesta * 2 > saldo) {
             JOptionPane.showMessageDialog(this, "Saldo insuficiente");
             return;
         }
+
         apuesta *= 2;
         manoJ.add(robar());
+
         actualizarVista();
         if (valor(manoJ) <= 21) {
             turnoBanca();
             actualizarVista();
         }
+
         resolverFinal();
     }
 
     private void resolverFinal() {
         int vj = valor(manoJ);
         int vb = valor(manoB);
+
         double delta;
         String msg;
+
         if (vj > 21) { delta = -apuesta; msg = "Te pasaste"; }
         else if (vb > 21) { delta = apuesta; msg = "La banca se pasa"; }
         else if (vj > vb) { delta = apuesta; msg = "Ganas"; }
         else if (vj < vb) { delta = -apuesta; msg = "Pierdes"; }
         else { delta = 0; msg = "Empate"; }
+
         saldo += delta;
         lblSaldo.setText("Saldo: " + String.format("%.2f", saldo));
         lblEstado.setText(msg + " (" + String.format("%+.2f", delta) + ")");
+
         setBotonesEnJuego(false);
         btnNueva.setEnabled(true);
     }
@@ -171,7 +200,10 @@ public class VentanaBlackJack extends JFrame {
 
     private void prepararBaraja() {
         baraja.clear();
-        for (int v = 1; v <= 13; v++) for (int s = 0; s < 4; s++) baraja.add(v);
+        for (int v = 1; v <= 13; v++)
+            for (int s = 0; s < 4; s++)
+                baraja.add(v);
+
         Collections.shuffle(baraja, rnd);
     }
 
@@ -190,28 +222,33 @@ public class VentanaBlackJack extends JFrame {
         return suma;
     }
 
-    private String textoMano(List<Integer> mano) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < mano.size(); i++) {
-            sb.append(cartaStr(mano.get(i)));
-            if (i < mano.size() - 1) sb.append("  ");
-        }
-        return sb.toString();
-    }
+    private ImageIcon cargarCarta(int v) {
+        String key;
 
-    private String cartaStr(int v) {
-        if (v == 1) return "A";
-        if (v == 11) return "J";
-        if (v == 12) return "Q";
-        if (v == 13) return "K";
-        return Integer.toString(v);
+        if (v == 1) key = "a";
+        else if (v == 11) key = "j";
+        else if (v == 12) key = "q";
+        else if (v == 13) key = "k";
+        else key = String.valueOf(v);
+
+        String ruta = props.getProperty(key);
+        return new ImageIcon(ruta);
     }
 
     private void actualizarVista() {
-        lblJugador.setText("Jugador: " + textoMano(manoJ));
-        lblBanca.setText("Banca: " + textoMano(manoB));
+        panelCartasJugador.removeAll();
+        for (int c : manoJ) panelCartasJugador.add(new JLabel(cargarCarta(c)));
+
+        panelCartasBanca.removeAll();
+        for (int c : manoB) panelCartasBanca.add(new JLabel(cargarCarta(c)));
+
         lblValorJ.setText("Valor: " + valor(manoJ));
         lblValorB.setText("Valor: " + valor(manoB));
+
+        panelCartasJugador.revalidate();
+        panelCartasJugador.repaint();
+        panelCartasBanca.revalidate();
+        panelCartasBanca.repaint();
     }
 
     public static void main(String[] args) {
