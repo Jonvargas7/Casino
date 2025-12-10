@@ -93,7 +93,7 @@ public class VentanaHighLow extends JFrame {
         setVisible(true);
     }
     
-    // --- MÉTODOS DE LÓGICA DE JUEGO (MODIFICADOS PARA IMAGENES) ---
+    // --- MÉTODOS DE LÓGICA DE JUEGO ---
 
     private void nuevaRonda() {
         if (baraja.size()<2) prepararBaraja();
@@ -143,12 +143,30 @@ public class VentanaHighLow extends JFrame {
         btnNueva.setEnabled(true);
         btnRevelar.setEnabled(false);
     }
+
+   
+    public int contarValorRestante(int valorBuscado) {
+        return contarValorRecursivo(baraja, valorBuscado, 0);
+    }
+
     
-    // --- MÉTODOS AUXILIARES DE IMAGEN ---
+    private int contarValorRecursivo(List<Integer> lista, int valorBuscado, int indice) {
+        
+        if (indice >= lista.size()) {
+            return 0;
+        }
+
+        
+        int cuentaActual = (lista.get(indice) == valorBuscado) ? 1 : 0;
+
+        
+        return cuentaActual + contarValorRecursivo(lista, valorBuscado, indice + 1);
+    }
+
+    
 
     private void setCartaLabel(JLabel label, int valor, boolean oculto) {
         if (oculto) {
-            // Usa la imagen de reverso
             ImageIcon img = cargarImagenReverso();
             label.setIcon(img);
             label.setText("Carta Siguiente");
@@ -160,7 +178,6 @@ public class VentanaHighLow extends JFrame {
             label.setIcon(img);
             label.setText(cartaTxt(valor)); // Muestra el valor de texto debajo de la imagen
         } else {
-            // Fallback al modo texto si la imagen falla
             label.setIcon(null);
             label.setText((label==lblCartaActual ? "Carta actual: " : "Carta nueva: ") + cartaTxt(valor));
         }
@@ -224,7 +241,7 @@ public class VentanaHighLow extends JFrame {
         return null;
     }
 
-    // --- MÉTODOS DE LÓGICA DE BARAJA (SIN CAMBIOS) ---
+    // --- MÉTODOS DE LÓGICA DE BARAJA ---
 
     private void prepararBaraja() {
         baraja.clear();
@@ -256,8 +273,6 @@ public class VentanaHighLow extends JFrame {
             return a;
         } catch(Exception e){ return -1; }
     }
-    
-    // El método setCartaLabel es la nueva lógica de setCartaLabel, por lo que las viejas se eliminan.
     
     private void setControles(boolean activo) {
         btnNueva.setEnabled(activo);
