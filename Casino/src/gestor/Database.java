@@ -12,7 +12,8 @@ public class Database {
     
     public static final String DB_NAME = "CasinoDB.db";
     public static final String URL = "jdbc:sqlite:" + DB_NAME;
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    // CORRECCIÓN: Cambiado a public para ser visible en otras clases
+    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**
      * Establece la conexión con la base de datos SQLite.
@@ -27,7 +28,7 @@ public class Database {
     /**
      * Inicializa la base de datos creando todas las tablas si no existen.
      */
-    public void inicializarBaseDatos() {
+    public void inicializarBaseDatos() { 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
 
@@ -38,7 +39,7 @@ public class Database {
                                 "email TEXT UNIQUE NOT NULL," +
                                 "password TEXT NOT NULL," +
                                 "fechaRegistro TEXT NOT NULL," +
-                                "rol TEXT NOT NULL)"; // ALMACENA RolUsuario.name()
+                                "rol TEXT NOT NULL)"; 
 
             // 2. Tabla Administrador (HIJA)
             String sqlAdministrador = "CREATE TABLE IF NOT EXISTS Administrador (" +
@@ -55,14 +56,23 @@ public class Database {
                                 "nivel INTEGER NOT NULL," +
                                 "FOREIGN KEY(id) REFERENCES Usuario(id) ON DELETE CASCADE)";
 
-            // 4. Tabla Juego (PADRE)
+            // 4. Tabla Empleado (HIJA)
+            String sqlEmpleado = "CREATE TABLE IF NOT EXISTS Empleado (" +
+                                  "id INTEGER PRIMARY KEY," + 
+                                  "puesto TEXT NOT NULL," +
+                                  "activo BOOLEAN NOT NULL CHECK (activo IN (0, 1))," + 
+                                  "fechaInicio TEXT NOT NULL," +
+                                  "FOREIGN KEY (id) REFERENCES Usuario(id) ON DELETE CASCADE)";
+
+
+            // 5. Tabla Juego (PADRE)
             String sqlJuego = "CREATE TABLE IF NOT EXISTS Juego (" +
                               "id INTEGER PRIMARY KEY," +
                               "nombre TEXT UNIQUE NOT NULL," +
                               "fechaCreacion TEXT NOT NULL," +
                               "activo INTEGER NOT NULL)";
 
-            // 5. Tabla Blackjack (HIJA)
+            // 6. Tabla Blackjack (HIJA)
             String sqlBlackjack = "CREATE TABLE IF NOT EXISTS Blackjack (" +
                                   "id INTEGER PRIMARY KEY," +
                                   "mazos INTEGER NOT NULL," +
@@ -70,7 +80,7 @@ public class Database {
                                   "apuestaMax REAL NOT NULL," +
                                   "FOREIGN KEY(id) REFERENCES Juego(id) ON DELETE CASCADE)";
 
-            // 6. Tabla HighLow (HIJA)
+            // 7. Tabla HighLow (HIJA)
             String sqlHighLow = "CREATE TABLE IF NOT EXISTS HighLow (" +
                                 "id INTEGER PRIMARY KEY," +
                                 "mazos INTEGER NOT NULL," +
@@ -82,6 +92,7 @@ public class Database {
             stmt.executeUpdate(sqlUsuario);
             stmt.executeUpdate(sqlAdministrador);
             stmt.executeUpdate(sqlJugador);
+            stmt.executeUpdate(sqlEmpleado); 
             stmt.executeUpdate(sqlJuego);
             stmt.executeUpdate(sqlBlackjack);
             stmt.executeUpdate(sqlHighLow);
@@ -94,8 +105,9 @@ public class Database {
     }
     
     
-
-    
+    /**
+     * Registra un usuario en la tabla principal y en la tabla hija correspondiente (Administrador, Jugador, Empleado).
+     */
     public void registrar(Usuario usuario) throws SQLException {
         
         
@@ -142,7 +154,18 @@ public class Database {
                     pstmtJugador.setInt(5, jugador.getNivel());
                     pstmtJugador.executeUpdate();
                 }
+            } else if (usuario instanceof Empleado) { 
+                Empleado empleado = (Empleado) usuario;
+                String sqlEmpleado = "INSERT INTO Empleado(id, puesto, activo, fechaInicio) VALUES(?, ?, ?, ?)";
+                try (PreparedStatement pstmtEmpleado = conn.prepareStatement(sqlEmpleado)) {
+                    pstmtEmpleado.setLong(1, idUsuario);
+                    pstmtEmpleado.setString(2, empleado.getPuesto());
+                    pstmtEmpleado.setBoolean(3, empleado.isActivo());
+                    pstmtEmpleado.setString(4, empleado.getFechaInicio().format(FORMATTER));
+                    pstmtEmpleado.executeUpdate();
+                }
             }
+
             
             conn.commit(); 
             System.out.println(usuario.getClass().getSimpleName() + " registrado con éxito. ID: " + idUsuario);
@@ -152,13 +175,16 @@ public class Database {
             try (Connection conn = connect()) {
                 conn.rollback();
             } catch (SQLException rollbackEx) {
-                
+                // Manejo de error si el rollback falla
             }
             throw new SQLException("Error al registrar usuario: " + e.getMessage());
         }
     }
 
     
+    /**
+     * Intenta autenticar a un usuario con un rol específico y carga los datos de la tabla hija.
+     */
     public Usuario login(String email, String password, String rolString) {
         
         String sql = "SELECT id, nombre, fechaRegistro, rol FROM Usuario WHERE email = ? AND password = ? AND rol = ?";
@@ -174,10 +200,11 @@ public class Database {
                 if (rs.next()) {
                     long id = rs.getLong("id");
                     String nombre = rs.getString("nombre");
+                    String userPassword = password; 
                     LocalDateTime fechaRegistro = LocalDateTime.parse(rs.getString("fechaRegistro"), FORMATTER);
                     RolUsuario rol = RolUsuario.valueOf(rs.getString("rol"));
                     
-                    // Ahora cargar los datos específicos del hijo
+                    // Cargar datos específicos del hijo
                     if (rol == RolUsuario.ADMINISTRADOR) {
                         String sqlAdmin = "SELECT nivelAcceso FROM Administrador WHERE id = ?";
                         try (PreparedStatement pstmtAdmin = conn.prepareStatement(sqlAdmin)) {
@@ -185,13 +212,13 @@ public class Database {
                             try (ResultSet rsAdmin = pstmtAdmin.executeQuery()) {
                                 if (rsAdmin.next()) {
                                     int nivelAcceso = rsAdmin.getInt("nivelAcceso");
-                                    return new Administrador(id, nombre, email, password, fechaRegistro, nivelAcceso);
+                                    return new Administrador(id, nombre, email, userPassword, fechaRegistro, nivelAcceso);
                                 }
                             }
                         }
                     } else if (rol == RolUsuario.JUGADOR) {
                         String sqlJugador = "SELECT saldo, numeroDePartidas, totalGanado, nivel FROM Jugador WHERE id = ?";
-                        try (PreparedStatement pstmtJugador = conn.prepareStatement(sqlJugador)) {
+                         try (PreparedStatement pstmtJugador = conn.prepareStatement(sqlJugador)) {
                             pstmtJugador.setLong(1, id);
                             try (ResultSet rsJugador = pstmtJugador.executeQuery()) {
                                 if (rsJugador.next()) {
@@ -199,7 +226,22 @@ public class Database {
                                     int numPartidas = rsJugador.getInt("numeroDePartidas");
                                     double totalGanado = rsJugador.getDouble("totalGanado");
                                     int nivel = rsJugador.getInt("nivel");
-                                    return new Jugador(id, nombre, email, password, fechaRegistro, saldo, numPartidas, totalGanado, nivel);
+                                    return new Jugador(id, nombre, email, userPassword, fechaRegistro, saldo, numPartidas, totalGanado, nivel);
+                                }
+                            }
+                        }
+                    } else if (rol == RolUsuario.EMPLEADO) { 
+                        String sqlEmpleado = "SELECT puesto, activo, fechaInicio FROM Empleado WHERE id = ?";
+                        try (PreparedStatement pstmtEmpleado = conn.prepareStatement(sqlEmpleado)) {
+                            pstmtEmpleado.setLong(1, id);
+                            try (ResultSet rsEmpleado = pstmtEmpleado.executeQuery()) {
+                                if (rsEmpleado.next()) {
+                                    String puesto = rsEmpleado.getString("puesto");
+                                    boolean activo = rsEmpleado.getBoolean("activo");
+                                    LocalDateTime fechaInicio = LocalDateTime.parse(rsEmpleado.getString("fechaInicio"), FORMATTER);
+                                    
+                                    // Usar el constructor completo de Empleado
+                                    return new Empleado(id, nombre, email, userPassword, fechaRegistro, puesto, activo, fechaInicio);
                                 }
                             }
                         }
@@ -212,6 +254,53 @@ public class Database {
         return null; 
     }
     
+    /**
+     * Obtiene una lista de todos los usuarios registrados en la base de datos (Admin, Jugador, Empleado).
+     */
+    public List<Usuario> getTodosLosUsuarios() {
+        List<Usuario> usuarios = new ArrayList<>();
+        String sql = "SELECT id, nombre, email, password, fechaRegistro, rol FROM Usuario";
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                long id = rs.getLong("id");
+                String nombre = rs.getString("nombre");
+                String email = rs.getString("email");
+                String password = rs.getString("password");
+                LocalDateTime fechaReg = LocalDateTime.parse(rs.getString("fechaRegistro"), FORMATTER);
+                RolUsuario rolEnum = RolUsuario.valueOf(rs.getString("rol"));
+                
+                if (rolEnum == RolUsuario.JUGADOR) {
+                    usuarios.add(getJugadorById(id, nombre, email, password, fechaReg));
+                } else if (rolEnum == RolUsuario.EMPLEADO) {
+                    usuarios.add(getEmpleadoById(id, nombre, email, password, fechaReg));
+                } else if (rolEnum == RolUsuario.ADMINISTRADOR) {
+                    usuarios.add(getAdministradorById(id, nombre, email, password, fechaReg));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error en Database.getTodosLosUsuarios: " + e.getMessage());
+        }
+        return usuarios;
+    }
+
+    // Métodos auxiliares para obtener subclases (Implementación asumida)
+    private Jugador getJugadorById(long id, String nombre, String email, String password, LocalDateTime fechaReg) throws SQLException {
+        // [Implementación para leer de la tabla Jugador]
+        return new Jugador(id, nombre, email, password, fechaReg, 0.0, 0, 0.0, 0); // Placeholder
+    }
+    private Empleado getEmpleadoById(long id, String nombre, String email, String password, LocalDateTime fechaReg) throws SQLException {
+        // [Implementación para leer de la tabla Empleado]
+        return new Empleado(id, nombre, email, password, fechaReg, "Cajero", true, LocalDateTime.now()); // Placeholder
+    }
+    private Administrador getAdministradorById(long id, String nombre, String email, String password, LocalDateTime fechaReg) throws SQLException {
+        // [Implementación para leer de la tabla Administrador]
+        return new Administrador(id, nombre, email, password, fechaReg, 1); // Placeholder
+    }
+
+
     
     public boolean existeJuegoPorNombre(String nombre) {
         String sql = "SELECT COUNT(*) FROM Juego WHERE nombre = ?";
@@ -288,11 +377,12 @@ public class Database {
             try (Connection conn = connect()) {
                 conn.rollback();
             } catch (SQLException rollbackEx) {
-                
+                // Manejo de error si el rollback falla
             }
             throw new SQLException("Error al registrar juego: " + e.getMessage());
         }
     }
+    
 
     
     public List<Juego> obtenerJuegosActivos() {

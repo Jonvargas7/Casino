@@ -11,10 +11,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.function.Consumer; 
 
 public class VentanaLogin extends JFrame {
     
     private Database database;
+    private Consumer<Usuario> onLoginSuccess; 
 
     private JTextField emailField;
     private JPasswordField passwordField;
@@ -22,70 +24,49 @@ public class VentanaLogin extends JFrame {
     private JButton loginButton;
     private JButton registerButton; 
 
-    public VentanaLogin(Database database) {
+    // Constructor que acepta el callback
+    public VentanaLogin(Database database, Consumer<Usuario> onLoginSuccess) {
         this.database = database;
+        this.onLoginSuccess = onLoginSuccess; 
         setTitle("Casino Login");
         
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
         setLayout(new BorderLayout(10, 10)); 
 
-       
         JPanel fieldPanel = new JPanel(new GridLayout(3, 2, 10, 10)); 
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
-        
         fieldPanel.add(new JLabel("Email:"));
         emailField = new JTextField(20);
         fieldPanel.add(emailField);
 
-        
         fieldPanel.add(new JLabel("Contraseña:"));
         passwordField = new JPasswordField(20);
         fieldPanel.add(passwordField);
-        
-        
-        fieldPanel.add(new JLabel("Rol:"));
-        String[] roles = {"ADMINISTRADOR", "EMPLEADO", "JUGADOR"};
-        rolComboBox = new JComboBox<>(roles);
-        fieldPanel.add(rolComboBox);
-        
-       
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0)); 
-        
-        loginButton = new JButton("Iniciar Sesión");
-        registerButton = new JButton("Registrarse (Jugador)"); 
-        registerButton.setEnabled(false); 
 
+        fieldPanel.add(new JLabel("Rol:"));
+        rolComboBox = new JComboBox<>(new String[]{"JUGADOR", "EMPLEADO", "ADMINISTRADOR"});
+        fieldPanel.add(rolComboBox);
+
+        loginButton = new JButton("Login");
+        registerButton = new JButton("Sign up (Jugador)");
+
+        loginButton.addActionListener(e -> realizarLogin());
+        registerButton.addActionListener(e -> openRegisterDialog());
+        
         buttonPanel.add(loginButton);
         buttonPanel.add(registerButton);
 
-        
         add(fieldPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-
-        
-        ((JComponent) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        
-        loginButton.addActionListener(e -> attemptLogin());
-        registerButton.addActionListener(e -> openRegisterDialog());
-        
-        
-        rolComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                
-                boolean isPlayer = "JUGADOR".equals(rolComboBox.getSelectedItem());
-                registerButton.setEnabled(isPlayer);
-            }
-        });
-
-        pack(); 
-        setLocationRelativeTo(null); 
+        pack();
+        setLocationRelativeTo(null);
     }
-
-    private void attemptLogin() {
-        String email = emailField.getText().trim();
-        String password = new String(passwordField.getPassword());
+    
+    private void realizarLogin() {
+        String email = emailField.getText();
+        char[] passwordChars = passwordField.getPassword();
+        String password = new String(passwordChars);
         String rol = (String) rolComboBox.getSelectedItem();
 
         if (email.isEmpty() || password.isEmpty()) {
@@ -107,7 +88,17 @@ public class VentanaLogin extends JFrame {
             }
             
             JOptionPane.showMessageDialog(this, mensaje, "Login Exitoso", JOptionPane.INFORMATION_MESSAGE);
-            dispose(); 
+            
+           
+            if (onLoginSuccess != null) {
+                // CORRECCIÓN: Notifica a VentanaInicio con el usuario logeado
+                onLoginSuccess.accept(usuario); 
+            }
+            
+            // *** BLOQUE DE CÓDIGO INCORRECTO ELIMINADO ***
+            // (Ya no se intenta abrir VentanaGestionUsuarios aquí)
+
+            dispose(); // Cierra la ventana de Login
             
         } else {
             JOptionPane.showMessageDialog(this, "Credenciales incorrectas o Rol no coincide.", "Error de Autenticación", JOptionPane.ERROR_MESSAGE);
@@ -115,7 +106,7 @@ public class VentanaLogin extends JFrame {
     }
     
     private void openRegisterDialog() {
-        
+        // Se asume que VentanaRegistro existe
         new VentanaRegistro(this, database).setVisible(true);
     }
 }

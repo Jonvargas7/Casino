@@ -6,8 +6,12 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import io.Propiedades;
 
-// Importar Database, necesario para pasar a la VentanaLogin/Registro
+// Importar Database y todas las clases de dominio
 import gestor.Database; 
+import domain.Usuario; 
+import domain.Jugador; 
+import domain.Administrador; // Importación necesaria para el chequeo de rol
+import domain.Empleado;      // Importación necesaria para el chequeo de rol
 
 public class VentanaInicio extends JFrame {
 
@@ -24,8 +28,11 @@ public class VentanaInicio extends JFrame {
     private JButton bJuego3 = new JButton("");
     private JButton bLogin = new JButton("Login");
     private JButton bSignUp = new JButton("Sign up"); 
+    // AÑADIDO: Botón de gestión
+    private JButton bGestionUsuarios;
     
     private Database database; 
+    private Usuario usuarioLogeado = null; 
 
     private Propiedades propiedades;
 
@@ -33,7 +40,7 @@ public class VentanaInicio extends JFrame {
     public VentanaInicio(Database database) { 
         this.database = database;
         
-        setTitle("Casino");
+        setTitle("Casino Royale"); // Corregido el título
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 700);
         setLocationRelativeTo(null);
@@ -61,18 +68,24 @@ public class VentanaInicio extends JFrame {
         pTitulo.add(titulo);
 
         pCentroSuperior.setBackground(azulOscuro);
+        
+        // Inicialización del botón de gestión (oculto inicialmente)
+        bGestionUsuarios = new JButton("Gestión Usuarios");
+        configurarBotonSuperior(bGestionUsuarios);
+        bGestionUsuarios.addActionListener(e -> abrirGestionUsuarios());
+        
         configurarBotonSuperior(bLogin);
         configurarBotonSuperior(bSignUp);
-        pCentroSuperior.add(bLogin);
-        pCentroSuperior.add(bSignUp);
+        // Los botones se añadirán en actualizarEstadoLogin()
 
         barraSuperior.add(pTitulo, BorderLayout.WEST);
-        barraSuperior.add(pCentroSuperior, BorderLayout.CENTER);
+        barraSuperior.add(pCentroSuperior, BorderLayout.EAST); // Usamos EAST para la zona de botones de usuario
         add(barraSuperior, BorderLayout.NORTH);
 
         pPrincipal.setBackground(new Color(245, 245, 250));
         pPrincipal.setBorder(new EmptyBorder(20, 20, 20, 20));
 
+        // MANTENIENDO LA LÓGICA DE CARGA DE IMÁGENES DEL USUARIO
         configurarBotonJuego(bJuego1, propiedades.getProperty("blackJack"), "BlackJack");
         configurarBotonJuego(bJuego2, propiedades.getProperty("highlow"), "High-Low");
         configurarBotonJuego(bJuego3, propiedades.getProperty("ruleta"), "Ruleta");
@@ -91,28 +104,92 @@ public class VentanaInicio extends JFrame {
        
         bLogin.addActionListener(e -> abrirLogin());
         
-        bSignUp.addActionListener(e -> abrirRegistro());
-
+        bSignUp.addActionListener(e -> abrirRegistroOLogout());
         
+        actualizarEstadoLogin();
+    }
+    
+    // CORREGIDO/MEJORADO: Maneja todos los botones superiores según el estado
+    private void actualizarEstadoLogin() {
+        pCentroSuperior.removeAll(); // Limpiamos la barra superior derecha
+
+        if (usuarioLogeado != null) {
+            String rol = usuarioLogeado.getClass().getSimpleName();
+            
+            // Botón de info de usuario
+            JLabel lblUsuario = new JLabel(usuarioLogeado.getNombre() + " (" + rol + ")");
+            lblUsuario.setForeground(Color.WHITE);
+            pCentroSuperior.add(lblUsuario);
+
+            // CRÍTICO: Mostrar botón de gestión si es Admin o Empleado
+            if (usuarioLogeado instanceof Administrador || usuarioLogeado instanceof Empleado) {
+                pCentroSuperior.add(bGestionUsuarios);
+            }
+            
+            // Botón de Logout
+            bSignUp.setText("Logout");
+            bSignUp.setActionCommand("Logout");
+            pCentroSuperior.add(bSignUp);
+            
+        } else {
+            bLogin.setText("Login");
+            bSignUp.setText("Sign up");
+            bSignUp.setActionCommand("SignUp");
+            pCentroSuperior.add(bLogin);
+            pCentroSuperior.add(bSignUp);
+        }
+        
+        pCentroSuperior.revalidate();
+        pCentroSuperior.repaint();
     }
     
     private void abrirLogin() {
-        
-        new VentanaLogin(database).setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
-        new VentanaLogin(database).setVisible(true);
+        VentanaLogin login = new VentanaLogin(database, this::onLoginSuccess);
+        login.setVisible(true);
         logger.info("Se ha abierto la ventana de Login");
     }
     
-    private void abrirRegistro() {
+    // CRÍTICO: Callback que se ejecuta tras el login exitoso
+    private void onLoginSuccess(Usuario usuario) {
+        this.usuarioLogeado = usuario;
+        actualizarEstadoLogin();
+        logger.info("Usuario logeado: " + usuario.getEmail());
         
-        new VentanaRegistro(this, database).setVisible(true);
-        logger.info("Se ha abierto la ventana de Registro de Jugador");
+        // CRÍTICO: Comprobar el rol y abrir la gestión si procede
+        if (usuarioLogeado instanceof Administrador || usuarioLogeado instanceof Empleado) {
+            abrirGestionUsuarios();
+        }
+    }
+    
+    private void abrirGestionUsuarios() {
+        if (usuarioLogeado instanceof Administrador || usuarioLogeado instanceof Empleado) {
+            // *** CORRECCIÓN CRÍTICA ***: Usa el constructor con 3 parámetros
+            new VentanaGestionUsuarios(this, database, usuarioLogeado); 
+            logger.info("Abriendo Gestión de Usuarios para: " + usuarioLogeado.getEmail());
+        } else {
+            // Esto no debería pasar si la lógica de `actualizarEstadoLogin` es correcta
+            JOptionPane.showMessageDialog(this, "Tu rol no tiene permiso para acceder a la gestión de usuarios.", "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void abrirRegistroOLogout() {
+        if ("Logout".equals(bSignUp.getActionCommand())) {
+            // Lógica de Logout
+            usuarioLogeado = null;
+            actualizarEstadoLogin();
+            JOptionPane.showMessageDialog(this, "Sesión cerrada.", "Logout", JOptionPane.INFORMATION_MESSAGE);
+            logger.info("Sesión cerrada.");
+        } else {
+            // Lógica de Registro
+            new VentanaRegistro(this, database).setVisible(true);
+            logger.info("Se ha abierto la ventana de Registro de Jugador");
+        }
     }
 
 
   
-
     private void configurarBotonJuego(JButton boton, String ruta, String tooltip) {
+        // MANTENEMOS TU LÓGICA EXACTA DE CARGA DE IMAGEN
         if (ruta != null) {
             
             try {
@@ -133,6 +210,7 @@ public class VentanaInicio extends JFrame {
     }
 
     private JPanel crearPanelJuego(JButton boton) {
+        // MANTENEMOS TU LÓGICA EXACTA
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 245, 250));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -141,6 +219,7 @@ public class VentanaInicio extends JFrame {
     }
 
     private void configurarBotonSuperior(JButton boton) {
+        // MANTENEMOS TU LÓGICA EXACTA
         boton.setBackground(new Color(255, 215, 0));
         boton.setForeground(Color.BLACK);
         boton.setFont(new Font("SansSerif", Font.BOLD, 14));
@@ -150,17 +229,28 @@ public class VentanaInicio extends JFrame {
     }
 
     private void abrirBlackJack() {
-         JOptionPane.showMessageDialog(this, "Funcionalidad de BlackJack aún no implementada.");
-        // Aquí iría new VentanaBlackJack().setVisible(true);
+        
+        if (usuarioLogeado instanceof Jugador) {
+            
+            Jugador jugador = (Jugador) usuarioLogeado;
+            // Se asume la existencia de VentanaBlackJack
+            new VentanaBlackJack(jugador).setVisible(true); 
+            logger.info("Abriendo BlackJack para: " + jugador.getEmail());
+            
+        } else if (usuarioLogeado != null) {
+             
+             JOptionPane.showMessageDialog(this, "Debes iniciar sesión como Jugador para acceder a este juego.", "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+        } else {
+            // No logeado
+            JOptionPane.showMessageDialog(this, "Debes iniciar sesión para acceder a BlackJack.", "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private void abrirHighLow() {
          JOptionPane.showMessageDialog(this, "Funcionalidad de High-Low aún no implementada.");
-        // Aquí iría new VentanaHighLow().setVisible(true);
     }
 
     private void abrirRuleta() {
          JOptionPane.showMessageDialog(this, "Funcionalidad de Ruleta aún no implementada.");
-        // Aquí iría new VentanaRuleta().setVisible(true);
     }
 }

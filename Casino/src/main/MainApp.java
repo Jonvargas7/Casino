@@ -30,7 +30,7 @@ public class MainApp {
         }
 
         
-        registrarUsuariosDePrueba(db);
+        registrarUsuariosDePrueba(db); // Este método ahora incluye al Empleado
         registrarJuegos(db);
         listarJuegosActivos(db);
         
@@ -44,88 +44,105 @@ public class MainApp {
     
     
     /**
-     * Registra usuarios de prueba (Admin y Jugador) si no existen.
+     * Registra usuarios de prueba (Admin, Jugador y EMPLEADO) si no existen.
      */
     private static void registrarUsuariosDePrueba(Database db) {
         System.out.println("\n--- 2.1. Registro de Usuarios de Prueba ---");
-        
-        
+
+        // 1. Administrador
         Usuario adminExistente = db.login("admin@casino.com", "admin123", RolUsuario.ADMINISTRADOR.name());
-        
-        if (adminExistente == null) { 
-             Administrador admin = new Administrador(
+        if (adminExistente == null) {
+            Administrador admin = new Administrador(
                 0, 
-                "Admin Jefe", 
+                "Admin Max", 
                 "admin@casino.com", 
                 "admin123", 
                 LocalDateTime.now(), 
-                99 
+                99
             );
-            
             try {
-				db.registrar(admin);
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-            System.out.println("Administrador de prueba registrado: " + admin.getNombre());
+                db.registrar(admin);
+                System.out.println("Administrador de prueba registrado: " + admin.getNombre());
+            } catch (SQLException e) {
+                System.err.println("Error al registrar Admin: " + e.getMessage());
+            }
         } else {
             System.out.println("Administrador de prueba ya existe.");
         }
         
-        
-        Usuario jugadorExistente = db.login("player@casino.com", "pass123", RolUsuario.JUGADOR.name());
-
-        if (jugadorExistente == null) { 
+        // 2. Jugador
+        Usuario jugadorExistente = db.login("player@casino.com", "player123", RolUsuario.JUGADOR.name());
+        if (jugadorExistente == null) {
             Jugador jugador = new Jugador(
                 0, 
-                "Prueba Player", 
+                "Pepe Gambler", 
                 "player@casino.com", 
-                "pass123", 
+                "player123", 
                 LocalDateTime.now(), 
-                1000.0, 
+                500.0, // Saldo inicial
                 0, 
                 0.0, 
                 1
             );
-            
             try {
-				db.registrar(jugador);
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-            System.out.println("Jugador de prueba registrado: " + jugador.getNombre());
+                db.registrar(jugador);
+                System.out.println("Jugador de prueba registrado: " + jugador.getNombre());
+            } catch (SQLException e) {
+                System.err.println("Error al registrar Jugador: " + e.getMessage());
+            }
         } else {
             System.out.println("Jugador de prueba ya existe.");
         }
-    }
+        
+        // 3. EMPLEADO (¡Registro Asegurado!)
+        Usuario empleadoExistente = db.login("emp@casino.com", "emp123", RolUsuario.EMPLEADO.name());
 
+        if (empleadoExistente == null) { 
+            Empleado empleado = new Empleado(
+                0, 
+                "Crupier Leo", 
+                "emp@casino.com", 
+                "emp123", 
+                LocalDateTime.now(), 
+                "Crupier", 
+                true, // Activo
+                LocalDateTime.now()
+            );
+            
+            try {
+                db.registrar(empleado);
+                System.out.println("Empleado de prueba registrado: " + empleado.getNombre());
+            } catch (SQLException e) {
+                System.err.println("Error al registrar Empleado: " + e.getMessage());
+            } 
+        } else {
+            System.out.println("Empleado de prueba ya existe.");
+        }
+    }
+    
     /**
-     * Registra juegos de prueba si no existen.
+     * Registra juegos de prueba (Blackjack y HighLow) si no existen.
      */
     private static void registrarJuegos(Database db) {
         System.out.println("\n--- 2.2. Registro de Juegos de Prueba ---");
         
-        
+        // Blackjack
         Blackjack bj = new Blackjack(
             0, 
-            "Blackjack Pro", 
+            "Blackjack 5 Mazos", 
             java.time.LocalDateTime.now(), 
             true, 
-            4, 
+            5, 
             10.0, 
             1000.0
         );
         try {
              db.registrarJuego(bj); 
         } catch (SQLException e) {
-            
             System.err.println("Error al registrar Blackjack: " + e.getMessage());
         }
-       
         
-       
+        // High Low
         HighLow hl = new HighLow(
             0, 
             "High Low Clásico", 
@@ -163,9 +180,8 @@ public class MainApp {
                     apuestaMin = ((HighLow) juego).getApuestaMin();
                 }
                 
-                System.out.println(String.format("Juego [%s] - ID: %d, Nombre: %s, Apuesta Mín: %.2f", 
-                    tipoJuego, juego.getId(), juego.getNombre(), apuestaMin
-                ));
+                System.out.println(String.format("Juego [%s] - ID: %d, Nombre: %s, Apuesta Mín: %.2f",
+                        tipoJuego, juego.getId(), juego.getNombre(), apuestaMin));
             }
         }
     }

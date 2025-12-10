@@ -1,0 +1,4 @@
+Rol,Email,Contraseña,Nivel de Acceso
+Administrador,admin@casino.com,admin123,Total (Ve Jugadores y Empleados)
+Empleado,emp@casino.com,emp123,Limitado (Solo ve Jugadores)
+Jugador,player@casino.com,player123,Juego (Accede a Blackjack)
