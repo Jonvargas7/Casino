@@ -8,14 +8,18 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.function.DoubleConsumer; 
+import java.io.File; // Necesario para cargar las imágenes de Propiedades
 
 public class VentanaBlackJack extends JFrame {
 
     private Jugador jugador; 
     private double saldo; 
     private double apuesta = 0.0;
-
     
+    // Propiedades para la carga de imágenes
+    private Propiedades props; 
+
+    // Componentes de la UI (final si se inicializan en la declaración o constructor)
     private final JLabel lblTitulo = new JLabel("BlackJack", SwingConstants.CENTER);
     private final JLabel lblSaldo = new JLabel();
     private final JTextField txtApuesta = new JTextField("10", 8);
@@ -32,101 +36,93 @@ public class VentanaBlackJack extends JFrame {
     private final JPanel panelCartasJugador = new JPanel(new FlowLayout());
     private final JPanel panelCartasBanca = new JPanel(new FlowLayout());
 
-    
+    // Lógica del juego
     private final List<Integer> baraja = new ArrayList<>();
-    private final Random rnd = new Random();
     private final List<Integer> manoJ = new ArrayList<>();
     private final List<Integer> manoB = new ArrayList<>();
-
-    private final Propiedades props = new Propiedades();
-
+    private final int MAX_VALOR_CARTA = 13;
+    private final int NUM_PALOS = 4;
+    private final int MAX_CARTAS_BARAJA = 52;
     
-    public VentanaBlackJack(Jugador jugador) {
-        this.jugador = jugador;
-        this.saldo = jugador.getSaldo(); 
 
+    // Constructor
+    public VentanaBlackJack(Jugador j) {
+        this.jugador = j;
+        this.saldo = j.getSaldo();
+        this.props = new Propiedades();
         props.cargar();
-
-        setTitle("BlackJack - Jugador: " + jugador.getNombre()); 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(850, 650);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
-
         
-        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 26));
-        JPanel top = new JPanel(new BorderLayout());
-        top.setBorder(new EmptyBorder(10, 10, 0, 10));
-        top.add(lblTitulo, BorderLayout.CENTER);
-        add(top, BorderLayout.NORTH);
-
+        initComponents();
+        actualizarSaldoUI();
+        lblEstado.setText("Listo para jugar. ¡Introduce tu apuesta!");
         
-        JPanel pCartas = new JPanel(new GridLayout(2, 1));
-        pCartas.setBorder(BorderFactory.createTitledBorder("Mesa de Juego"));
-        
-        JPanel pBanca = new JPanel(new BorderLayout());
-        pBanca.setBorder(BorderFactory.createTitledBorder("Banca"));
-        pBanca.add(panelCartasBanca, BorderLayout.CENTER);
-        pBanca.add(lblValorB, BorderLayout.SOUTH);
-
-        JPanel pJugador = new JPanel(new BorderLayout());
-        pJugador.setBorder(BorderFactory.createTitledBorder("Jugador"));
-        pJugador.add(panelCartasJugador, BorderLayout.CENTER);
-        pJugador.add(lblValorJ, BorderLayout.SOUTH);
-
-        pCartas.add(pBanca);
-        pCartas.add(pJugador);
-        add(pCartas, BorderLayout.CENTER);
-
-        
-        JPanel pControles = new JPanel(new BorderLayout());
-        pControles.setBorder(new EmptyBorder(0, 10, 10, 10));
-
-        
-        lblEstado.setFont(new Font("SansSerif", Font.BOLD, 16));
-        pControles.add(lblEstado, BorderLayout.NORTH);
-        
-        
-        JPanel panelInfo = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 8));
-        
-        actualizarSaldoUI(); 
-        
-        panelInfo.add(new JLabel("Apuesta (€):"));
-        panelInfo.add(txtApuesta);
-        panelInfo.add(lblSaldo); 
-        panelInfo.add(btnDepositar);
-
-        
-        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
-        panelAcciones.add(btnNueva);
-        panelAcciones.add(btnPedir);
-        panelAcciones.add(btnPlantarse);
-        panelAcciones.add(btnDoblar);
-        
-        JPanel pBottom = new JPanel(new GridLayout(2, 1));
-        pBottom.add(panelInfo);
-        pBottom.add(panelAcciones);
-        
-        pControles.add(pBottom, BorderLayout.CENTER);
-        add(pControles, BorderLayout.SOUTH);
-
-        
-        btnNueva.addActionListener(e -> nuevaMano());
-        btnPedir.addActionListener(e -> pedir());
-        btnPlantarse.addActionListener(e -> plantarse());
-        btnDoblar.addActionListener(e -> doblar());
-        btnDepositar.addActionListener(e -> depositar());
-
-        
+        // Habilitar botones iniciales
         habilitarBotonesJuego(false);
         btnNueva.setEnabled(true);
+        btnDepositar.setEnabled(true);
+    }
+    
+    private void initComponents() {
+        setTitle("BlackJack - " + jugador.getNombre());
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
         
-        setVisible(true);
+        // Configuración de paneles
+        JPanel pnlNorte = new JPanel(new BorderLayout());
+        pnlNorte.add(lblTitulo, BorderLayout.NORTH);
+        pnlNorte.add(lblValorB, BorderLayout.SOUTH);
+        pnlNorte.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+
+        JPanel pnlCentro = new JPanel(new GridLayout(2, 1));
+        pnlCentro.add(panelCartasBanca);
+        pnlCentro.add(panelCartasJugador);
+
+        JPanel pnlSur = new JPanel(new BorderLayout());
+        
+        JPanel pnlControles = new JPanel(new GridLayout(1, 4, 10, 0));
+        pnlControles.add(btnPedir);
+        pnlControles.add(btnPlantarse);
+        pnlControles.add(btnDoblar);
+
+        JPanel pnlInfo = new JPanel(new GridLayout(2, 3, 10, 5));
+        pnlInfo.add(lblSaldo);
+        pnlInfo.add(new JLabel("Apuesta:"));
+        pnlInfo.add(txtApuesta);
+        pnlInfo.add(btnDepositar);
+        pnlInfo.add(btnNueva);
+        pnlInfo.add(lblEstado);
+        
+        pnlSur.add(pnlControles, BorderLayout.NORTH);
+        pnlSur.add(pnlInfo, BorderLayout.CENTER);
+        pnlSur.add(lblValorJ, BorderLayout.SOUTH);
+        pnlSur.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
+        
+        add(pnlNorte, BorderLayout.NORTH);
+        add(pnlCentro, BorderLayout.CENTER);
+        add(pnlSur, BorderLayout.SOUTH);
+
+        // Listeners
+        btnDepositar.addActionListener(e -> depositar());
+        btnNueva.addActionListener(e -> nuevaMano());
+        btnPedir.addActionListener(e -> pedirCarta());
+        btnPlantarse.addActionListener(e -> plantarse());
+        btnDoblar.addActionListener(e -> doblar());
+        
+        pack();
+        setSize(500, 650);
+        setLocationRelativeTo(null);
     }
     
     
-    
+    // ====================================================================
+    // 📢 IMPLEMENTACIÓN DE HILOS (THREADS) EN ACCIONES LENTAS
+    // ====================================================================
+
+    /**
+     * Hilo para la acción de Nueva Mano. Simula una operación de barajado o reparto que toma tiempo.
+     */
     private void nuevaMano() {
+        // *** Lógica de validación (sigue en el EDT para feedback inmediato) ***
         try {
             apuesta = Double.parseDouble(txtApuesta.getText().trim());
             if (apuesta <= 0) {
@@ -142,233 +138,271 @@ public class VentanaBlackJack extends JFrame {
             return;
         }
 
-        saldo -= apuesta; 
-        actualizarSaldoUI();
-
-        manoJ.clear();
-        manoB.clear();
-        iniciarBaraja();
-        
-       
-        manoJ.add(robar());
-        manoB.add(robar());
-        manoJ.add(robar());
-        manoB.add(robar());
-
-        
-        actualizarVista(false); 
-
-        if (valor(manoJ) == 21) {
-            lblEstado.setText("¡BLACKJACK!");
-            plantarse(); 
-        } else {
-            lblEstado.setText("Tu turno. Pedir o Plantarse.");
-            habilitarBotonesJuego(true);
-            btnDoblar.setEnabled(apuesta * 2 <= saldo); 
-        }
-    }
-    
-    
-    private void pedir() {
-        manoJ.add(robar());
-        actualizarVista(false);
-        btnDoblar.setEnabled(false); 
-
-        if (valor(manoJ) > 21) {
-            lblEstado.setText("¡BUST! Te pasaste de 21.");
-            plantarse(); 
-        } else if (valor(manoJ) == 21) {
-            lblEstado.setText("21. La banca juega.");
-            plantarse();
-        } else {
-            lblEstado.setText("Pide otra carta o plántate.");
-        }
-    }
-    
-    
-    private void plantarse() {
+        // 1. Deshabilitar UI antes de empezar el trabajo concurrente (EDT)
         habilitarBotonesJuego(false);
-        bancaJuega();
-        comprobarGanador();
-        btnNueva.setEnabled(true);
-    }
-
-    
-    private void doblar() {
-        if (apuesta * 2 > saldo) {
-            JOptionPane.showMessageDialog(this, "Saldo insuficiente para doblar.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        btnNueva.setEnabled(false);
+        btnDepositar.setEnabled(false);
+        lblEstado.setText("Barajando y repartiendo...");
         
-        saldo -= apuesta; 
-        apuesta *= 2;
-        actualizarSaldoUI();
+        // 2. Crear y ejecutar el hilo para el reparto (NEW -> RUNNABLE)
+        new Thread(() -> {
+            try {
+                // Simulación de una operación larga (TIMED_WAITING)
+                Thread.sleep(1500); 
 
-        manoJ.add(robar());
-        actualizarVista(false); 
-        
-        if (valor(manoJ) > 21) {
-            lblEstado.setText("¡BUST! Te pasaste de 21 después de doblar.");
-        } else {
-            lblEstado.setText("Doblaste con éxito. La banca juega.");
-        }
-        
-        plantarse();
-    }
-    
-    /** Lógica de la banca. */
-    private void bancaJuega() {
-        
-        actualizarVista(true); 
+                // 3. Lógica del juego (en el Hilo Secundario)
+                saldo -= apuesta; 
+                
+                manoJ.clear();
+                manoB.clear();
+                iniciarBaraja();
+                
+                manoJ.add(robar());
+                manoB.add(robar());
+                manoJ.add(robar());
+                manoB.add(robar());
 
-        
-        while (valor(manoB) < 17) {
-            manoB.add(robar());
-            actualizarVista(true); 
-            
-            try { Thread.sleep(500); } catch (InterruptedException ignored) {}
-        }
-    }
+                // 4. Actualizar la interfaz (DEBE HACERSE EN EL EDT)
+                SwingUtilities.invokeLater(() -> {
+                    actualizarSaldoUI(); 
+                    actualizarVista(false); 
 
-    
-    private void comprobarGanador() {
-        int valorJ = valor(manoJ);
-        int valorB = valor(manoB);
-        double ganancia = 0.0;
+                    if (valor(manoJ) == 21) {
+                        lblEstado.setText("¡BLACKJACK!");
+                        plantarse(); // plantarse() llamará a la lógica de la banca (también en hilo)
+                    } else {
+                        lblEstado.setText("Tu turno. Pedir o Plantarse.");
+                        habilitarBotonesJuego(true);
+                        btnDoblar.setEnabled(apuesta * 2 <= saldo); 
+                        btnDepositar.setEnabled(true);
+                    }
+                });
 
-        String resultado = "";
-        if (valorJ > 21) {
-            resultado = "Gana la Banca (Jugador BUST).";
-        } else if (valorB > 21) {
-            resultado = "Gana el Jugador (Banca BUST).";
-            ganancia = apuesta * 2;
-        } else if (valorJ == valorB) {
-            resultado = "Empate (PUSH). Se devuelve la apuesta.";
-            ganancia = apuesta;
-        } else if (valorJ > valorB) {
-            resultado = "¡Gana el Jugador!";
-            
-            if (valorJ == 21 && manoJ.size() == 2) {
-                 ganancia = apuesta + apuesta * 1.5; 
-                 resultado += " (BLACKJACK - Pago 3:2)";
-            } else {
-                 ganancia = apuesta * 2; 
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        } else {
-            resultado = "Gana la Banca.";
-        }
-
-        saldo += ganancia;
-        actualizarSaldoUI();
-        lblEstado.setText(resultado);
-        
-        
-        jugador.setSaldo(saldo); 
+        }).start();
     }
     
-    
+    /**
+     * Hilo para la acción de Depositar. Simula la confirmación de la transacción.
+     */
     private void depositar() {
         
         DoubleConsumer onSaldoActualizado = cantidad -> {
-            saldo += cantidad;
             
-            jugador.setSaldo(saldo); 
-            actualizarSaldoUI();
-            JOptionPane.showMessageDialog(this, String.format("Depósito de %.2f€ realizado.", cantidad), "Depósito Exitoso", JOptionPane.INFORMATION_MESSAGE);
+            // 1. Deshabilitar UI para simular espera de confirmación (EDT)
+            habilitarBotonesJuego(false);
+            btnNueva.setEnabled(false); 
+            btnDepositar.setEnabled(false);
+            lblEstado.setText("Procesando confirmación de depósito...");
+            
+            
+            new Thread(() -> {
+                try {
+                    Thread.sleep(2000); 
+
+                    
+                    saldo += cantidad;
+                    jugador.setSaldo(saldo); 
+
+                    
+                    SwingUtilities.invokeLater(() -> {
+                        actualizarSaldoUI(); // UI update
+                        lblEstado.setText("✅ Depósito de " + String.format("%.2f € confirmado.", cantidad));
+                        
+                        
+                        if (manoJ.isEmpty()) { 
+                            btnNueva.setEnabled(true);
+                        } else {
+                            
+                            habilitarBotonesJuego(true);
+                        }
+                        btnDepositar.setEnabled(true);
+                    });
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
         };
         
-        
+        // Abre la ventana de depósito
         new VentanaDeposito(saldo, onSaldoActualizado).setVisible(true);
+    }
+    
+    /**
+     * Hilo para la lógica de la Banca. Simula la pausa entre cartas robadas.
+     */
+    private void bancaJuega() {
         
+        
+        new Thread(() -> {
+            
+            
+            SwingUtilities.invokeLater(() -> actualizarVista(true));
+            
+            
+            while (valor(manoB) < 17) {
+                try { 
+                    Thread.sleep(750); 
+                    
+                    
+                    manoB.add(robar());
+                    
+                    
+                    SwingUtilities.invokeLater(() -> actualizarVista(true)); 
+
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    return; 
+                }
+            }
+            
+            // 3. Al finalizar el turno de la banca, ejecutar la comprobación de ganador (EDT)
+            SwingUtilities.invokeLater(() -> {
+                comprobarGanador(); // Comprueba y actualiza el estado final
+                btnNueva.setEnabled(true);
+                btnDepositar.setEnabled(true);
+            });
+            
+        }).start();
+    }
+    
+    /** Llama al juego de la banca en un hilo. */
+    private void plantarse() {
+        habilitarBotonesJuego(false);
+        lblEstado.setText("Turno de la Banca...");
+        bancaJuega(); // Inicia el hilo de juego de la Banca
+    }
+
+
+    
+    private void pedirCarta() {
+        if (valor(manoJ) < 21) {
+            manoJ.add(robar());
+            actualizarVista(false);
+            btnDoblar.setEnabled(false); // No se puede doblar después de pedir
+            if (valor(manoJ) > 21) {
+                lblEstado.setText("¡Te has pasado!");
+                plantarse(); // Llama a plantarse, que llama a bancaJuega en un hilo
+            }
+        }
+    }
+    
+    private void doblar() {
+        if (apuesta * 2 <= saldo) {
+            saldo -= apuesta;
+            apuesta *= 2;
+            actualizarSaldoUI();
+            
+            manoJ.add(robar());
+            actualizarVista(false);
+            
+            if (valor(manoJ) > 21) {
+                lblEstado.setText("Te has pasado al doblar.");
+            } else {
+                lblEstado.setText("Te plantas con una carta.");
+            }
+            plantarse(); // Llama a plantarse, que llama a bancaJuega en un hilo
+        } else {
+            JOptionPane.showMessageDialog(this, "Saldo insuficiente para doblar.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     
+    private void comprobarGanador() {
+        int vJ = valor(manoJ);
+        int vB = valor(manoB);
+        double premio = 0;
+        
+        if (vJ > 21) {
+            lblEstado.setText("Ganó la Banca (Te pasaste)");
+        } else if (vB > 21) {
+            premio = apuesta * 2;
+            lblEstado.setText("¡Ganaste! (Banca se pasó) +" + String.format("%.2f€", premio));
+        } else if (vJ > vB) {
+            premio = apuesta * 2;
+            lblEstado.setText("¡Ganaste! +" + String.format("%.2f€", premio));
+        } else if (vB > vJ) {
+            lblEstado.setText("Ganó la Banca");
+        } else {
+            premio = apuesta;
+            lblEstado.setText("Empate. Se devuelve la apuesta.");
+        }
+        
+        saldo += premio;
+        jugador.setSaldo(saldo);
+        actualizarSaldoUI();
+        manoJ.clear(); // Limpiar manos para el siguiente juego
+        manoB.clear();
+        apuesta = 0;
+    }
+
     private void iniciarBaraja() {
         baraja.clear();
-        for (int i = 0; i < 4; i++) { 
-            for (int v = 1; v <= 13; v++) { 
+        for (int v = 1; v <= MAX_VALOR_CARTA; v++) {
+            for (int p = 0; p < NUM_PALOS; p++) {
                 baraja.add(v);
             }
         }
-        Collections.shuffle(baraja, rnd);
+        Collections.shuffle(baraja);
     }
-
     
     private int robar() {
-        return baraja.remove(baraja.size() - 1);
+        if (baraja.isEmpty()) {
+            iniciarBaraja();
+        }
+        return baraja.remove(0);
     }
-
     
     private int valor(List<Integer> mano) {
-        int suma = 0, ases = 0;
-        for (int v : mano) {
-            int val = Math.min(v, 10); 
-            if (v == 1) ases++;
-            suma += val;
+        int suma = 0;
+        int numAses = 0;
+        
+        for (int carta : mano) {
+            int v = carta;
+            if (v == 1) { // As
+                numAses++;
+                suma += 11;
+            } else if (v >= 10) { // Figuras (10, J, Q, K)
+                suma += 10;
+            } else {
+                suma += v;
+            }
         }
         
-        while (ases > 0 && suma + 10 <= 21) { 
-            suma += 10; 
-            ases--; 
+        // Ajustar Ases si la suma es mayor a 21
+        while (suma > 21 && numAses > 0) {
+            suma -= 10;
+            numAses--;
         }
         return suma;
     }
 
-    
-    private ImageIcon cargarCarta(int v) {
-        String key;
-
-        if (v == 1) key = "a";
-        else if (v == 11) key = "j";
-        else if (v == 12) key = "q";
-        else if (v == 13) key = "k";
-        else key = String.valueOf(v);
-
-        
-        String ruta = props.getProperty(key);
-        if (ruta != null && !ruta.isEmpty()) {
-             ImageIcon icon = new ImageIcon(ruta);
-             
-             Image img = icon.getImage().getScaledInstance(70, 100, Image.SCALE_SMOOTH);
-             return new ImageIcon(img);
-        }
-        
-        return new ImageIcon(); 
-    }
-    
-    private ImageIcon cargarCartaOculta() {
-        
-        String ruta = props.getProperty("back"); 
-        if (ruta != null && !ruta.isEmpty()) {
-             ImageIcon icon = new ImageIcon(ruta);
-             Image img = icon.getImage().getScaledInstance(70, 100, Image.SCALE_SMOOTH);
-             return new ImageIcon(img);
-        }
-        return new ImageIcon();
-    }
-
-    
-    private void actualizarVista(boolean mostrarBanca) {
+    private void actualizarVista(boolean mostrarBancaCompleta) {
+        // Limpiar paneles
         panelCartasJugador.removeAll();
-        for (int c : manoJ) {
-            panelCartasJugador.add(new JLabel(cargarCarta(c)));
+        panelCartasBanca.removeAll();
+
+        // Cartas del Jugador
+        for (int carta : manoJ) {
+            panelCartasJugador.add(new JLabel(cargarCarta(carta)));
         }
 
-        panelCartasBanca.removeAll();
-        if (manoB.isEmpty()) {
-            lblValorB.setText("Valor: 0");
-        } else {
-            
+        // Cartas de la Banca
+        if (manoB.size() > 0) {
+            // Primera carta de la Banca (siempre visible)
             panelCartasBanca.add(new JLabel(cargarCarta(manoB.get(0))));
-            
-            if (mostrarBanca) {
-                
+
+            if (mostrarBancaCompleta) {
+                // Si mostramos la banca completa (al plantarse)
                 for (int i = 1; i < manoB.size(); i++) {
                     panelCartasBanca.add(new JLabel(cargarCarta(manoB.get(i))));
                 }
                 lblValorB.setText("Valor: " + valor(manoB));
             } else {
-                
+                // Carta oculta (al inicio)
                 if (manoB.size() > 1) {
                     panelCartasBanca.add(new JLabel(cargarCartaOculta()));
                 }
@@ -378,7 +412,6 @@ public class VentanaBlackJack extends JFrame {
         
         lblValorJ.setText("Valor: " + valor(manoJ));
 
-        
         panelCartasJugador.revalidate();
         panelCartasJugador.repaint();
         panelCartasBanca.revalidate();
@@ -402,10 +435,36 @@ public class VentanaBlackJack extends JFrame {
     private void habilitarBotonesJuego(boolean habilitar) {
         btnPedir.setEnabled(habilitar);
         btnPlantarse.setEnabled(habilitar);
-        btnDoblar.setEnabled(habilitar);
-        btnNueva.setEnabled(!habilitar);
-        txtApuesta.setEditable(!habilitar);
-        btnDepositar.setEnabled(!habilitar);
+        btnDoblar.setEnabled(habilitar); // La lógica de saldo lo ajustará
     }
+    
+    
+    private ImageIcon cargarCarta(int v) {
+        String key;
+        if (v == 1) key = "a";
+        else if (v == 11) key = "j";
+        else if (v == 12) key = "q";
+        else if (v == 13) key = "k";
+        else key = String.valueOf(v);
+        
+        return getScaledIcon(props.getProperty(key));
+    }
+    
+    private ImageIcon cargarCartaOculta() {
+        return getScaledIcon(props.getProperty("back"));
+    }
+    
+    private ImageIcon getScaledIcon(String path) {
+        if (path == null || !new File(path).exists()) {
+             
+             return new ImageIcon(); 
+        }
+        
+        ImageIcon originalIcon = new ImageIcon(path);
+        Image originalImage = originalIcon.getImage();
+        Image scaledImage = originalImage.getScaledInstance(70, 100, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaledImage);
+    }
+    
     
 }
