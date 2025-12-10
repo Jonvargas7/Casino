@@ -2,6 +2,9 @@ package gui;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import domain.Jugador;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,7 +40,7 @@ public class VentanaRuleta extends JFrame {
     private static final Color COLOR_PERDIDA = Color.RED;
     private static final Color COLOR_CERO = new Color(0, 100, 0); // Verde oscuro para el cero
 
-    public VentanaRuleta() {
+    public VentanaRuleta(Jugador jugador) {
         setTitle("Ruleta");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(560, 420);
@@ -218,8 +221,5 @@ public class VentanaRuleta extends JFrame {
         // Si usáramos DB, aquí iría la persistencia del resultado y saldo.
     }
 
-    // --- MAIN DE PRUEBA ---
-    public static void main(String[] args) { 
-        SwingUtilities.invokeLater(VentanaRuleta::new); 
-    }
+   
 }

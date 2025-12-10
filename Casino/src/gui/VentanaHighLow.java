@@ -3,6 +3,9 @@ package gui;
 import io.Propiedades;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import domain.Jugador;
+
 import java.awt.*;
 import java.io.File;
 import java.net.URL;
@@ -38,7 +41,7 @@ public class VentanaHighLow extends JFrame {
     private static final Color COLOR_GANANCIA = new Color(0, 150, 0); 
     private static final Color COLOR_PERDIDA = Color.RED;
 
-    public VentanaHighLow() {
+    public VentanaHighLow(Jugador jugador) {
         props.cargar();
 
         setTitle("High–Low");
@@ -262,6 +265,4 @@ public class VentanaHighLow extends JFrame {
         cmbDecision.setEnabled(activo);
     }
 
-
-    public static void main(String[] args) { SwingUtilities.invokeLater(VentanaHighLow::new); }
 }

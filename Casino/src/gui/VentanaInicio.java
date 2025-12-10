@@ -247,10 +247,38 @@ public class VentanaInicio extends JFrame {
     }
 
     private void abrirHighLow() {
-         JOptionPane.showMessageDialog(this, "Funcionalidad de High-Low aún no implementada.");
+        
+        if (usuarioLogeado instanceof Jugador) {
+            
+            Jugador jugador = (Jugador) usuarioLogeado;
+            // Se asume la existencia de VentanaHighLow
+            new VentanaHighLow(jugador).setVisible(true); 
+            logger.info("Abriendo High-Low para: " + jugador.getEmail());
+            
+        } else if (usuarioLogeado != null) {
+             
+             JOptionPane.showMessageDialog(this, "Debes iniciar sesión como Jugador para acceder a este juego.", "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+        } else {
+            // No logeado
+            JOptionPane.showMessageDialog(this, "Debes iniciar sesión para acceder a High-Low.", "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private void abrirRuleta() {
-         JOptionPane.showMessageDialog(this, "Funcionalidad de Ruleta aún no implementada.");
+        
+        if (usuarioLogeado instanceof Jugador) {
+            
+            Jugador jugador = (Jugador) usuarioLogeado;
+            // Se asume la existencia de VentanaRuleta
+            new VentanaRuleta(jugador).setVisible(true); 
+            logger.info("Abriendo Ruleta para: " + jugador.getEmail());
+            
+        } else if (usuarioLogeado != null) {
+             
+             JOptionPane.showMessageDialog(this, "Debes iniciar sesión como Jugador para acceder a este juego.", "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+        } else {
+            // No logeado
+            JOptionPane.showMessageDialog(this, "Debes iniciar sesión para acceder a Ruleta.", "Acceso denegado", JOptionPane.WARNING_MESSAGE);
+        }
     }
 }

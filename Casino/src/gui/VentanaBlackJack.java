@@ -407,4 +407,5 @@ public class VentanaBlackJack extends JFrame {
         txtApuesta.setEditable(!habilitar);
         btnDepositar.setEnabled(!habilitar);
     }
+    
 }
