@@ -4,7 +4,6 @@ import domain.*;
 import gestor.Database;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
@@ -42,32 +41,36 @@ public class VentanaGestionUsuarios extends JDialog {
         setLocationRelativeTo(parent);
 
         initComponents();
-        cargarDatos(); // Llama a la carga de datos inicial
-        
-        // Se hace visible al final del constructor o en el MainApp
-        // setVisible(true);
+        cargarDatos();
     }
 
     private void initComponents() {
         tabbedPane = new JTabbedPane();
         
-        // Pestaña de Jugadores
+        // Pestaña 1: Jugadores (Visible para Administradores y Empleados)
         tablaJugadores = new JTable();
         tablaJugadores.setRowHeight(25);
         tablaJugadores.getTableHeader().setReorderingAllowed(false);
         tabbedPane.addTab("Jugadores", new JScrollPane(tablaJugadores));
         
-        // Pestaña de Empleados/Admin
+        // Pestaña 2: Empleados/Admin 
         tablaEmpleados = new JTable();
         tablaEmpleados.setRowHeight(25);
         tablaEmpleados.getTableHeader().setReorderingAllowed(false);
-        tabbedPane.addTab("Empleados y Administradores", new JScrollPane(tablaEmpleados));
+        
+        // --- RESTRICCIÓN DE SEGURIDAD: Solo Administradores ven esta pestaña ---
+        if (usuarioLogeado instanceof Administrador) {
+            tabbedPane.addTab("Empleados y Administradores", new JScrollPane(tablaEmpleados));
+        } else if (usuarioLogeado instanceof Empleado) {
+            logger.info("Empleado logeado (" + usuarioLogeado.getEmail() + ") no tiene permiso para ver la pestaña de gestión de Empleados/Admin.");
+        }
+        // -----------------------------------------------------------------------
 
-        // Añadir el panel de pestañas a la ventana
         add(tabbedPane, BorderLayout.CENTER);
         
         // Panel de Botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        
         panelBotones.add(btnAnadir);
         panelBotones.add(btnEditar);
         panelBotones.add(btnEliminar);
@@ -81,27 +84,28 @@ public class VentanaGestionUsuarios extends JDialog {
     }
 
     /**
-     * CORRECCIÓN CLAVE: Obtiene todos los usuarios y los clasifica para las tablas.
+     * Obtiene todos los usuarios y los clasifica para las tablas.
      */
     private void cargarDatos() {
         try {
-            // Este método DEBE DEVOLVER los objetos Empleado/Administrador completos
             List<Usuario> todosUsuarios = database.obtenerTodosLosUsuarios();
             
-            // 1. Filtrar y cargar Jugadores
+            // 1. Filtrar y cargar Jugadores (Visibles para todos los usuarios de gestión)
             List<Jugador> jugadores = todosUsuarios.stream()
                     .filter(u -> u instanceof Jugador)
                     .map(u -> (Jugador) u)
                     .collect(Collectors.toList());
             cargarTablaJugadores(jugadores);
 
-            // 2. Filtrar y cargar Empleados/Administradores
-            // Nota: Administrador hereda de Empleado, por lo que este filtro los incluye a ambos.
-            List<Empleado> empleados = todosUsuarios.stream()
-                    .filter(u -> u instanceof Empleado)
-                    .map(u -> (Empleado) u)
-                    .collect(Collectors.toList());
-            cargarTablaEmpleados(empleados);
+            // 2. Filtrar y cargar Empleados/Administradores (Solo si la pestaña es visible)
+            if (usuarioLogeado instanceof Administrador) {
+                // Filtramos a todos los Empleados (que incluye Administrador)
+                List<Empleado> empleados = todosUsuarios.stream()
+                        .filter(u -> u instanceof Empleado)
+                        .map(u -> (Empleado) u)
+                        .collect(Collectors.toList());
+                cargarTablaEmpleados(empleados);
+            }
             
         } catch (Exception e) {
             logger.severe("Error al cargar datos de la base de datos: " + e.getMessage());
@@ -189,41 +193,149 @@ public class VentanaGestionUsuarios extends JDialog {
         tablaEmpleados.getColumnModel().getColumn(6).setPreferredWidth(60); 
     }
     
+    /**
+     * Método auxiliar para que VentanaFormularioUsuario pueda recargar los datos.
+     */
+    public void cargarDatosDesdeFormulario() {
+        cargarDatos();
+    }
+
+    
     // =========================================================
     // --- MÉTODOS DE GESTIÓN (Añadir, Editar, Eliminar) ---
     // =========================================================
 
     private void abrirVentanaAnadir() {
-        // Lógica de añadir...
-        JOptionPane.showMessageDialog(this, "Funcionalidad 'Añadir Usuario' pendiente.", "Pendiente", JOptionPane.INFORMATION_MESSAGE);
+        
+        String rolForzado = null; 
+        boolean tienePermiso = false;
+
+        if (usuarioLogeado instanceof Administrador) {
+            tienePermiso = true; 
+        } else if (usuarioLogeado instanceof Empleado) {
+            rolForzado = "JUGADOR"; // Empleado solo puede crear Jugadores
+            tienePermiso = true; 
+        } else { 
+            logger.warning("Usuario sin permisos (" + usuarioLogeado.getClass().getSimpleName() + ") intentó usar Añadir.");
+        }
+        
+        if (tienePermiso) {
+            // Abrir la nueva ventana de formulario para Añadir (usuarioAEditar = null)
+            VentanaFormularioUsuario ventana = new VentanaFormularioUsuario(
+                (JFrame) SwingUtilities.getWindowAncestor(this), 
+                this, 
+                database, 
+                usuarioLogeado, 
+                (Usuario) null, // <<-- ¡CORRECCIÓN CLAVE! Cast de null a Usuario
+                rolForzado
+            );
+            ventana.setVisible(true);
+        } else {
+             JOptionPane.showMessageDialog(this, 
+                "Permiso Denegado: Su rol no le permite añadir nuevos usuarios.", 
+                "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void abrirVentanaEditar() {
         Usuario seleccionado = obtenerUsuarioSeleccionado();
         
-        if (seleccionado != null) {
-            // Lógica de edición...
-            JOptionPane.showMessageDialog(this, 
-                "Funcionalidad 'Editar Usuario' (" + seleccionado.getNombre() + ") pendiente.", 
-                "Pendiente", JOptionPane.INFORMATION_MESSAGE);
+        if (seleccionado == null) {
+            JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario para editar.", "Error de Selección", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // --- LÓGICA DE PERMISOS DE EDITAR ---
+        boolean esAutoEdicion = seleccionado.getId() == usuarioLogeado.getId();
+        boolean tienePermiso = false;
+
+        if (usuarioLogeado instanceof Administrador) {
+            tienePermiso = true;
+        } else if (usuarioLogeado instanceof Empleado) {
+            // Empleado puede editar Jugadores o sus propios datos
+            if (seleccionado instanceof Jugador || esAutoEdicion) {
+                 tienePermiso = true;
+            }
+        } else { // Jugador logeado
+            // Jugador solo puede auto-editarse
+            if (esAutoEdicion) {
+                tienePermiso = true;
+            }
+        }
+        
+        if (tienePermiso) {
+            // Abrir la nueva ventana de formulario para Editar
+            VentanaFormularioUsuario ventana = new VentanaFormularioUsuario(
+                (JFrame) SwingUtilities.getWindowAncestor(this), 
+                this, 
+                database, 
+                usuarioLogeado, 
+                seleccionado, 
+                null 
+            );
+            ventana.setVisible(true);
         } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario.", "Error de Selección", JOptionPane.WARNING_MESSAGE);
+             JOptionPane.showMessageDialog(this, 
+                "Permiso Denegado: Solo puede editar Jugadores o sus propios datos.", 
+                "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
         }
     }
-
+    
     private void intentarEliminar() {
         Usuario seleccionado = obtenerUsuarioSeleccionado();
         
-        if (seleccionado != null) {
+        if (seleccionado == null) {
+            JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario de la tabla para eliminar.", "Error de Selección", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // No se puede eliminar a uno mismo
+        if (seleccionado.getId() == usuarioLogeado.getId()) {
+             JOptionPane.showMessageDialog(this, 
+                "Permiso Denegado: No puede eliminarse a sí mismo.", 
+                "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
+             return;
+        }
+        
+        // --- LÓGICA DE PERMISOS DE ELIMINAR ---
+        boolean tienePermiso = false;
+        String rolSeleccionado = seleccionado.getRol().toString();
+
+        if (usuarioLogeado instanceof Administrador) {
+            if (seleccionado instanceof Administrador) {
+                JOptionPane.showMessageDialog(this, 
+                    "Permiso Denegado: Un Administrador no puede eliminar a otro Administrador.", 
+                    "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            tienePermiso = true;
+            
+        } else if (usuarioLogeado instanceof Empleado) {
+            // Empleado solo puede eliminar Jugadores
+            if (seleccionado instanceof Jugador) {
+                tienePermiso = true;
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Permiso Denegado: Un Empleado solo puede eliminar Jugadores.", 
+                    "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } else { // Jugador
+            JOptionPane.showMessageDialog(this, 
+                "Permiso Denegado: Un Jugador no tiene permisos para eliminar usuarios.", 
+                "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (tienePermiso) {
             int confirmacion = JOptionPane.showConfirmDialog(this, 
-                "¿Está seguro de que desea eliminar al usuario " + seleccionado.getNombre() + "?",
+                "¿Está seguro de que desea eliminar a '" + seleccionado.getNombre() + "' (" + rolSeleccionado + ")?",
                 "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             
             if (confirmacion == JOptionPane.YES_OPTION) {
                 try {
-                    // Lógica de eliminación...
-                    database.eliminarUsuario(seleccionado.getId()); // Asumiendo que el método ya está implementado
-                    cargarDatos(); // Refrescar la tabla
+                    database.eliminarUsuario(seleccionado.getId()); 
+                    cargarDatos(); 
                     JOptionPane.showMessageDialog(this, "Usuario eliminado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(this, 
@@ -231,8 +343,6 @@ public class VentanaGestionUsuarios extends JDialog {
                         "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
                 }
             }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario de la tabla para eliminar.", "Error de Selección", JOptionPane.WARNING_MESSAGE);
         }
     }
     
@@ -245,7 +355,6 @@ public class VentanaGestionUsuarios extends JDialog {
         try {
             tablaActiva = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
         } catch (ClassCastException | NullPointerException e) {
-            // En caso de que el componente no sea un JScrollPane o esté mal inicializado
             return null;
         }
         
@@ -285,5 +394,4 @@ public class VentanaGestionUsuarios extends JDialog {
         
         return null;
     }
-    
 }

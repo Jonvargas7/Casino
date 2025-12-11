@@ -163,8 +163,12 @@ public class VentanaInicio extends JFrame {
     
     private void abrirGestionUsuarios() {
         if (usuarioLogeado instanceof Administrador || usuarioLogeado instanceof Empleado) {
-            // *** CORRECCIÓN CRÍTICA ***: Usa el constructor con 3 parámetros
-            new VentanaGestionUsuarios(this, database, usuarioLogeado); 
+            // 1. Crear la instancia en una variable
+            VentanaGestionUsuarios ventanaGestion = new VentanaGestionUsuarios(this, database, usuarioLogeado); 
+            
+            // 2. HACERLA VISIBLE (Esta es la corrección clave)
+            ventanaGestion.setVisible(true); // <--- AÑADIR ESTA LÍNEA
+            
             logger.info("Abriendo Gestión de Usuarios para: " + usuarioLogeado.getEmail());
         } else {
             // Esto no debería pasar si la lógica de `actualizarEstadoLogin` es correcta

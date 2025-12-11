@@ -10,21 +10,24 @@ public class Administrador extends Empleado {
     }
     
     /**
-     * Constructor requerido por Database.java. 
-     * Llama al constructor protegido de Empleado, pero establece el RolUsuario a ADMINISTRADOR.
+     * Constructor para CARGAR desde la DB (con ID).
      */
     public Administrador(long id, String nombre, String email, String password, LocalDateTime fechaRegistro, 
                          String puesto, LocalDateTime fechaInicio, boolean activo) {
-        // Llama al constructor protegido de la clase Empleado (super), 
-        // y pasa RolUsuario.ADMINISTRADOR
+        // Llama al constructor protegido de Empleado (super) con 'id'
         super(id, nombre, email, password, fechaRegistro, RolUsuario.ADMINISTRADOR, puesto, fechaInicio, activo);
     }
     
-    // No necesita getters/setters extra si solo hereda los campos de Empleado
-
-    @Override
-    public String toString() {
-        return String.format("ADMINISTRADOR: %s (Puesto: %s)", 
-            super.toString(), getPuesto());
+    /**
+     * Constructor para CREAR un nuevo Administrador (SIN ID).
+     */
+    public Administrador(String nombre, String email, String password, LocalDateTime fechaRegistro, 
+                         String puesto, LocalDateTime fechaInicio, boolean activo) {
+        // Llama al constructor protegido de Empleado (super) sin 'id'
+        super(nombre, email, password, fechaRegistro, RolUsuario.ADMINISTRADOR, puesto, fechaInicio, activo);
     }
+    
+    // No necesita getters/setters extra si solo hereda los campos de Empleado
+// ... (resto de toString)
+// ...
 }

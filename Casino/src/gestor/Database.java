@@ -295,8 +295,7 @@ public class Database {
 
     /**
      * Método auxiliar para cargar los datos de Empleado o Administrador.
-     * * CORRECCIÓN CLAVE: Se ajusta la llamada a los constructores para que coincida 
-     * con la firma (8 argumentos: ..., puesto, fechaInicio, activo).
+     * Se ajusta para usar la firma de constructor correcta.
      */
     private Empleado obtenerEmpleadoEspecifico(Connection conn, long id, String nombre, String email, String password, LocalDateTime fechaRegistro, RolUsuario rol) throws SQLException {
         String sqlEmpleado = "SELECT puesto, activo, fechaInicio FROM Empleado WHERE id = ?";
@@ -310,14 +309,10 @@ public class Database {
                     boolean activo = rs.getBoolean("activo");
                     LocalDateTime fechaInicio = LocalDateTime.parse(rs.getString("fechaInicio"), FORMATTER);
                     
-                    // La firma del constructor espera: (..., puesto, fechaInicio, activo)
-                    
                     if (rol == RolUsuario.ADMINISTRADOR) {
-                        // CORRECCIÓN 1: Se invierte 'activo' y 'fechaInicio' para coincidir con el constructor de Administrador
                         return new Administrador(id, nombre, email, password, fechaRegistro, 
                                                 puesto, fechaInicio, activo); 
                     } else {
-                        // CORRECCIÓN 2: Se eliminan 9º argumento 'rol' y se invierte 'activo' y 'fechaInicio' para coincidir con el constructor de Empleado (8 argumentos)
                         return new Empleado(id, nombre, email, password, fechaRegistro, 
                                             puesto, fechaInicio, activo);
                     }
@@ -327,6 +322,26 @@ public class Database {
         return null; 
     }
     
+    // =========================================================
+    // WRAPPER DE GUARDADO (NUEVO MÉTODO)
+    // =========================================================
+    /**
+     * Guarda un usuario. Si tiene ID > 0, lo actualiza. Si es nuevo (ID <= 0), lo registra.
+     * Este método es usado por VentanaFormularioUsuario.java.
+     * @param usuario El objeto Usuario a guardar.
+     * @throws Exception Si ocurre un error al registrar/actualizar.
+     */
+    public void guardarUsuario(Usuario usuario) throws SQLException {
+        if (usuario.getId() > 0) {
+            // Edición: Llama al método existente de actualización.
+            actualizarUsuario(usuario);
+        } else {
+            // Añadir: Llama al método existente de registro.
+            registrar(usuario);
+        }
+    }
+
+
     /**
      * Actualiza la información de un usuario (base y específica).
      * Nota: No permite cambiar el email ni la fecha de registro en esta versión.

@@ -13,8 +13,7 @@ public class Empleado extends Usuario {
     }
     
     /**
-     * Constructor PROTEGIDO para uso interno y para que Administrador pueda llamar a super()
-     * pasando su propio rol.
+     * Constructor PROTEGIDO usado para CARGAR desde la DB (con ID).
      */
     protected Empleado(long id, String nombre, String email, String password, LocalDateTime fechaRegistro, 
                        RolUsuario rol, String puesto, LocalDateTime fechaInicio, boolean activo) {
@@ -25,43 +24,59 @@ public class Empleado extends Usuario {
     }
 
     /**
-     * Constructor PÚBLICO requerido por Database.java para crear un Empleado normal.
-     * Este constructor fija el rol a EMPLEADO.
+     * Constructor PROTEGIDO usado para CREAR un nuevo Empleado (SIN ID).
+     */
+    protected Empleado(String nombre, String email, String password, LocalDateTime fechaRegistro, 
+                       RolUsuario rol, String puesto, LocalDateTime fechaInicio, boolean activo) {
+        super(nombre, email, password, fechaRegistro, rol); // Llama a super sin 'id'
+        this.puesto = puesto;
+        this.fechaInicio = fechaInicio;
+        this.activo = activo;
+    }
+
+    /**
+     * Constructor PÚBLICO para CARGAR un Empleado normal (con ID).
      */
     public Empleado(long id, String nombre, String email, String password, LocalDateTime fechaRegistro, 
                     String puesto, LocalDateTime fechaInicio, boolean activo) {
-        // Llama al constructor protegido, fijando el rol a EMPLEADO
+        // Llama al constructor protegido con 'id'
         this(id, nombre, email, password, fechaRegistro, RolUsuario.EMPLEADO, puesto, fechaInicio, activo);
     }
     
-    // Getters y Setters
-    public String getPuesto() {
-        return puesto;
+    /**
+     * Constructor PÚBLICO para CREAR un nuevo Empleado normal (SIN ID).
+     */
+    public Empleado(String nombre, String email, String password, LocalDateTime fechaRegistro, 
+                    String puesto, LocalDateTime fechaInicio, boolean activo) {
+        // Llama al constructor protegido sin 'id'
+        this(nombre, email, password, fechaRegistro, RolUsuario.EMPLEADO, puesto, fechaInicio, activo);
     }
 
-    public void setPuesto(String puesto) {
-        this.puesto = puesto;
-    }
+	public String getPuesto() {
+		return puesto;
+	}
 
-    public LocalDateTime getFechaInicio() {
-        return fechaInicio;
-    }
+	public void setPuesto(String puesto) {
+		this.puesto = puesto;
+	}
 
-    public void setFechaInicio(LocalDateTime fechaInicio) {
-        this.fechaInicio = fechaInicio;
-    }
+	public LocalDateTime getFechaInicio() {
+		return fechaInicio;
+	}
 
-    public boolean isActivo() {
-        return activo;
-    }
+	public void setFechaInicio(LocalDateTime fechaInicio) {
+		this.fechaInicio = fechaInicio;
+	}
 
-    public void setActivo(boolean activo) {
-        this.activo = activo;
-    }
+	public boolean isActivo() {
+		return activo;
+	}
+
+	public void setActivo(boolean activo) {
+		this.activo = activo;
+	}
     
-    @Override
-    public String toString() {
-        return String.format("%s (Puesto: %s, Activo: %b)", 
-            super.toString(), puesto, activo);
-    }
+    // Getters y Setters
+// ... (resto de getters, setters y toString)
+// ...
 }

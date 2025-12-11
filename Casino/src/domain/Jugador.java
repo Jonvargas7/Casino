@@ -10,9 +10,24 @@ public class Jugador extends Usuario {
 
     public Jugador() {}
 
+    /**
+     * Constructor para CARGAR desde la DB (con ID).
+     */
     public Jugador(long id, String nombre, String email, String password, LocalDateTime fechaRegistro,
                    double saldo, int numeroDePartidas, double totalGanado, int nivel) {
         super(id, nombre, email, password, fechaRegistro, RolUsuario.JUGADOR);
+        this.saldo = saldo;
+        this.numeroDePartidas = numeroDePartidas;
+        this.totalGanado = totalGanado;
+        this.nivel = nivel;
+    }
+
+    /**
+     * Constructor para CREAR un nuevo Jugador (SIN ID).
+     */
+    public Jugador(String nombre, String email, String password, LocalDateTime fechaRegistro,
+                   double saldo, int numeroDePartidas, double totalGanado, int nivel) {
+        super(nombre, email, password, fechaRegistro, RolUsuario.JUGADOR);
         this.saldo = saldo;
         this.numeroDePartidas = numeroDePartidas;
         this.totalGanado = totalGanado;
@@ -23,10 +38,8 @@ public class Jugador extends Usuario {
     public double getSaldo() {
 		return saldo;
 	}
-
-	public void setSaldo(double saldo) {
-		this.saldo = saldo;
-	}
+// ... (resto de getters, setters y toString)
+// ...
 
 	public int getNumeroDePartidas() {
 		return numeroDePartidas;
@@ -52,15 +65,7 @@ public class Jugador extends Usuario {
 		this.nivel = nivel;
 	}
 
-	@Override
-    public String toString() {
-        return "Jugador{" +
-                "id=" + getId() +
-                ", nombre='" + getNombre() + '\'' +
-                ", saldo=" + saldo +
-                ", partidas=" + numeroDePartidas +
-                ", totalGanado=" + totalGanado +
-                ", nivel=" + nivel +
-                '}';
-    }
+	public void setSaldo(double saldo) {
+		this.saldo = saldo;
+	}
 }
