@@ -189,7 +189,7 @@ public class VentanaInicio extends JFrame {
 
   
     private void configurarBotonJuego(JButton boton, String ruta, String tooltip) {
-        // MANTENEMOS TU LÓGICA EXACTA DE CARGA DE IMAGEN
+        
         if (ruta != null) {
             
             try {
