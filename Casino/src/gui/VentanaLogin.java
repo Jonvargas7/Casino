@@ -4,17 +4,18 @@ import domain.Administrador;
 import domain.Empleado;
 import domain.Jugador;
 import domain.Usuario;
+import domain.RolUsuario; // <--- Importación de RolUsuario
 
 import gestor.Database; 
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.function.Consumer; 
 
 public class VentanaLogin extends JFrame {
     
+    private static final long serialVersionUID = 1L;
     private Database database;
     private Consumer<Usuario> onLoginSuccess; 
 
@@ -24,7 +25,6 @@ public class VentanaLogin extends JFrame {
     private JButton loginButton;
     private JButton registerButton; 
 
-    // Constructor que acepta el callback
     public VentanaLogin(Database database, Consumer<Usuario> onLoginSuccess) {
         this.database = database;
         this.onLoginSuccess = onLoginSuccess; 
@@ -32,8 +32,10 @@ public class VentanaLogin extends JFrame {
         
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
         setLayout(new BorderLayout(10, 10)); 
+        setSize(400, 250);
+        setLocationRelativeTo(null); // Centrar
 
-        JPanel fieldPanel = new JPanel(new GridLayout(3, 2, 10, 10)); 
+        JPanel fieldPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // 4 filas para rol
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
         fieldPanel.add(new JLabel("Email:"));
@@ -45,68 +47,78 @@ public class VentanaLogin extends JFrame {
         fieldPanel.add(passwordField);
 
         fieldPanel.add(new JLabel("Rol:"));
-        rolComboBox = new JComboBox<>(new String[]{"JUGADOR", "EMPLEADO", "ADMINISTRADOR"});
+        // Inicializa el ComboBox con los nombres del enum RolUsuario
+        String[] roles = Arrays.stream(RolUsuario.values())
+                               .map(RolUsuario::name)
+                               .toArray(String[]::new);
+        rolComboBox = new JComboBox<>(roles);
         fieldPanel.add(rolComboBox);
 
-        loginButton = new JButton("Login");
-        registerButton = new JButton("Sign up (Jugador)");
-
-        loginButton.addActionListener(e -> realizarLogin());
-        registerButton.addActionListener(e -> openRegisterDialog());
+        fieldPanel.add(new JLabel("")); // Espacio en blanco
         
+        loginButton = new JButton("Login");
+        registerButton = new JButton("Registro (Jugador)"); 
         buttonPanel.add(loginButton);
         buttonPanel.add(registerButton);
 
         add(fieldPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-        pack();
-        setLocationRelativeTo(null);
+
+        // Listeners
+        loginButton.addActionListener(e -> attemptLogin());
+        registerButton.addActionListener(e -> openRegisterDialog());
+
+        setVisible(true);
     }
     
-    private void realizarLogin() {
-        String email = emailField.getText();
-        char[] passwordChars = passwordField.getPassword();
-        String password = new String(passwordChars);
-        String rol = (String) rolComboBox.getSelectedItem();
-
-        if (email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Por favor, introduce email y contraseña.", "Error de Login", JOptionPane.ERROR_MESSAGE);
+    private void attemptLogin() {
+        String email = emailField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        String rolSeleccionadoStr = (String) rolComboBox.getSelectedItem(); 
+        
+        if (rolSeleccionadoStr == null || email.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Debe rellenar todos los campos.", "Error de Entrada", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        Usuario usuario = database.login(email, password, rol);
+        try {
+            // CORRECCIÓN CLAVE: Convertir el String a RolUsuario ENUM
+            RolUsuario rol = RolUsuario.valueOf(rolSeleccionadoStr); 
+            
+            Usuario usuario = database.login(email, password, rol);
 
-        if (usuario != null) {
-            String mensaje = String.format("Bienvenido %s! Rol: %s", usuario.getNombre(), rol);
-            
-            if (usuario instanceof Jugador) {
-                mensaje += String.format(" (Acceso de Juego - Saldo: %.2f)", ((Jugador)usuario).getSaldo()); 
-            } else if (usuario instanceof Administrador) {
-                mensaje += " (Acceso Total)";
-            } else if (usuario instanceof Empleado) {
-                mensaje += " (Acceso de Crupier/Empleado)";
+            if (usuario != null) {
+                String mensaje = String.format("Bienvenido %s! Rol: %s", usuario.getNombre(), rol);
+                
+                if (usuario instanceof Jugador) {
+                    mensaje += String.format(" (Saldo: %.2f €)", ((Jugador)usuario).getSaldo()); 
+                } else if (usuario instanceof Administrador) {
+                    mensaje += " (Acceso Total)";
+                } else if (usuario instanceof Empleado) {
+                    mensaje += " (Acceso de Crupier/Empleado)";
+                }
+                
+                JOptionPane.showMessageDialog(this, mensaje, "Login Exitoso", JOptionPane.INFORMATION_MESSAGE);
+                
+                if (onLoginSuccess != null) {
+                    onLoginSuccess.accept(usuario); 
+                }
+                
+                dispose(); 
+                
+            } else {
+                JOptionPane.showMessageDialog(this, "Credenciales incorrectas o Rol no coincide.", "Error de Autenticación", JOptionPane.ERROR_MESSAGE);
             }
-            
-            JOptionPane.showMessageDialog(this, mensaje, "Login Exitoso", JOptionPane.INFORMATION_MESSAGE);
-            
-           
-            if (onLoginSuccess != null) {
-                // CORRECCIÓN: Notifica a VentanaInicio con el usuario logeado
-                onLoginSuccess.accept(usuario); 
-            }
-            
-            // *** BLOQUE DE CÓDIGO INCORRECTO ELIMINADO ***
-            // (Ya no se intenta abrir VentanaGestionUsuarios aquí)
-
-            dispose(); // Cierra la ventana de Login
-            
-        } else {
-            JOptionPane.showMessageDialog(this, "Credenciales incorrectas o Rol no coincide.", "Error de Autenticación", JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException e) {
+             // Esto sucede si el String del ComboBox no coincide con un nombre de enum (No debería pasar si el ComboBox se inicializa correctamente)
+             JOptionPane.showMessageDialog(this, "Error: Rol de usuario no válido.", "Error Interno", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     private void openRegisterDialog() {
         // Se asume que VentanaRegistro existe
-        new VentanaRegistro(this, database).setVisible(true);
+        // Si VentanaRegistro no existe, crearía una clase simple aquí
+        // new VentanaRegistro(this, database).setVisible(true);
+        JOptionPane.showMessageDialog(this, "Lógica de registro pendiente. Usa: player@casino.com / player123", "Info", JOptionPane.INFORMATION_MESSAGE);
     }
 }

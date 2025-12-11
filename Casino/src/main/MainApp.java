@@ -14,7 +14,7 @@ public class MainApp {
 
     public static void main(String[] args) {
         
-        
+        // 1. Inicialización de la Base de Datos
         System.out.println("--- 1. Inicializando Base de Datos ---");
         
         Database db = new Database(); 
@@ -29,12 +29,13 @@ public class MainApp {
             return; 
         }
 
-        
-        registrarUsuariosDePrueba(db); // Este método ahora incluye al Empleado
+        // 2. Registro de Datos de Prueba
+        registrarUsuariosDePrueba(db); 
         registrarJuegos(db);
         listarJuegosActivos(db);
         
         
+        // 3. Lanzamiento de la Interfaz Gráfica
         System.out.println("\n--- 3. Lanzando Ventana de Inicio ---");
         
         SwingUtilities.invokeLater(() -> {
@@ -44,102 +45,91 @@ public class MainApp {
     
     
     /**
-     * Registra usuarios de prueba (Admin, Jugador y EMPLEADO) si no existen.
+     * Registra usuarios de prueba (Admin, Empleado y Jugador) si no existen.
      */
     private static void registrarUsuariosDePrueba(Database db) {
-        System.out.println("\n--- 2.1. Registro de Usuarios de Prueba ---");
-
-        // 1. Administrador
-        Usuario adminExistente = db.login("admin@casino.com", "admin123", RolUsuario.ADMINISTRADOR.name());
-        if (adminExistente == null) {
-            Administrador admin = new Administrador(
-                0, 
-                "Admin Max", 
-                "admin@casino.com", 
-                "admin123", 
-                LocalDateTime.now(), 
-                99
-            );
-            try {
-                db.registrar(admin);
-                System.out.println("Administrador de prueba registrado: " + admin.getNombre());
-            } catch (SQLException e) {
-                System.err.println("Error al registrar Admin: " + e.getMessage());
-            }
-        } else {
-            System.out.println("Administrador de prueba ya existe.");
-        }
+        System.out.println("\n--- 2.1. Registrando Usuarios de Prueba (si no existen) ---");
+        LocalDateTime now = LocalDateTime.now();
         
-        // 2. Jugador
-        Usuario jugadorExistente = db.login("player@casino.com", "player123", RolUsuario.JUGADOR.name());
-        if (jugadorExistente == null) {
-            Jugador jugador = new Jugador(
-                0, 
-                "Pepe Gambler", 
-                "player@casino.com", 
-                "player123", 
-                LocalDateTime.now(), 
-                500.0, // Saldo inicial
-                0, 
-                0.0, 
-                1
-            );
-            try {
-                db.registrar(jugador);
-                System.out.println("Jugador de prueba registrado: " + jugador.getNombre());
-            } catch (SQLException e) {
-                System.err.println("Error al registrar Jugador: " + e.getMessage());
-            }
-        } else {
-            System.out.println("Jugador de prueba ya existe.");
-        }
+        // La restricción UNIQUE del email hace que falle si ya existen.
+        // Se usa una comprobación más robusta para el error.
         
-        // 3. EMPLEADO (¡Registro Asegurado!)
-        Usuario empleadoExistente = db.login("emp@casino.com", "emp123", RolUsuario.EMPLEADO.name());
-
-        if (empleadoExistente == null) { 
-            Empleado empleado = new Empleado(
-                0, 
-                "Crupier Leo", 
-                "emp@casino.com", 
-                "emp123", 
-                LocalDateTime.now(), 
-                "Crupier", 
-                true, // Activo
-                LocalDateTime.now()
-            );
+        // 1. ADMINISTRADOR: admin@casino.com, admin123, Acceso Total
+        try {
+            Administrador admin = new Administrador(0, "Admin Casino", "admin@casino.com", "admin123", 
+                now, "Gerente General", now, true);
+            db.registrar(admin); 
+            System.out.println("-> Administrador admin@casino.com registrado.");
+        } catch (SQLException e) {
+            // CORRECCIÓN: Comprueba tanto el código 19 como el mensaje de error.
+            boolean isUniqueConstraintError = (e.getErrorCode() == 19) || 
+                                              e.getMessage().contains("UNIQUE constraint failed");
             
-            try {
-                db.registrar(empleado);
-                System.out.println("Empleado de prueba registrado: " + empleado.getNombre());
-            } catch (SQLException e) {
-                System.err.println("Error al registrar Empleado: " + e.getMessage());
-            } 
-        } else {
-            System.out.println("Empleado de prueba ya existe.");
+            if (isUniqueConstraintError) {
+                 System.out.println("-> Administrador admin@casino.com ya existe.");
+            } else {
+                 System.err.println("-> Error al registrar Admin: " + e.getMessage());
+            }
+        }
+
+        // 2. EMPLEADO: emp@casino.com, emp123, Acceso Limitado (Crupier)
+        try {
+            Empleado emp = new Empleado(0, "Empleado Crupier", "emp@casino.com", "emp123", 
+                now, "Crupier de Mesa", now, true);
+            db.registrar(emp);
+            System.out.println("-> Empleado emp@casino.com registrado.");
+        } catch (SQLException e) {
+            // CORRECCIÓN: Comprueba tanto el código 19 como el mensaje de error.
+            boolean isUniqueConstraintError = (e.getErrorCode() == 19) || 
+                                              e.getMessage().contains("UNIQUE constraint failed");
+                                              
+            if (isUniqueConstraintError) {
+                 System.out.println("-> Empleado emp@casino.com ya existe.");
+            } else {
+                 System.err.println("-> Error al registrar Empleado: " + e.getMessage());
+            }
+        }
+
+        // 3. JUGADOR: player@casino.com, player123, Acceso Juego (Saldo inicial 500.0)
+        try {
+            Jugador player = new Jugador(0, "Jugador Demo", "player@casino.com", "player123", 
+                now, 500.0, 0, 0.0, 1);
+            db.registrar(player);
+            System.out.println("-> Jugador player@casino.com registrado (Saldo: 500.0).");
+        } catch (SQLException e) {
+            // CORRECCIÓN: Comprueba tanto el código 19 como el mensaje de error.
+            boolean isUniqueConstraintError = (e.getErrorCode() == 19) || 
+                                              e.getMessage().contains("UNIQUE constraint failed");
+                                              
+            if (isUniqueConstraintError) {
+                 System.out.println("-> Jugador player@casino.com ya existe.");
+            } else {
+                 System.err.println("-> Error al registrar Jugador: " + e.getMessage());
+            }
         }
     }
     
     /**
-     * Registra juegos de prueba (Blackjack y HighLow) si no existen.
+     * Registra los juegos iniciales si no existen.
      */
     private static void registrarJuegos(Database db) {
-        System.out.println("\n--- 2.2. Registro de Juegos de Prueba ---");
+        System.out.println("\n--- 2.2. Registrando Juegos de Prueba (si no existen) ---");
         
         // Blackjack
         Blackjack bj = new Blackjack(
             0, 
-            "Blackjack 5 Mazos", 
+            "Blackjack Clásico", 
             java.time.LocalDateTime.now(), 
-            true, 
-            5, 
-            10.0, 
-            1000.0
+            true, // activo
+            6,    // 6 mazos
+            10.0, // apuesta mínima
+            1000.0 // apuesta máxima
         );
         try {
              db.registrarJuego(bj); 
+             System.out.println("-> Blackjack Clásico registrado.");
         } catch (SQLException e) {
-            System.err.println("Error al registrar Blackjack: " + e.getMessage());
+            System.out.println("-> Blackjack Clásico ya existe o error: " + e.getMessage());
         }
         
         // High Low
@@ -154,8 +144,9 @@ public class MainApp {
         );
         try {
              db.registrarJuego(hl); 
+             System.out.println("-> High Low Clásico registrado.");
         } catch (SQLException e) {
-            System.err.println("Error al registrar High Low: " + e.getMessage());
+            System.out.println("-> High Low Clásico ya existe o error: " + e.getMessage());
         }
     }
     
@@ -163,26 +154,39 @@ public class MainApp {
      * Lista los juegos activos registrados.
      */
     private static void listarJuegosActivos(Database db) {
-        System.out.println("\n--- 2.3. Listado de Juegos Activos ---");
+        System.out.println("\n--- 2.3. Listado de Juegos Activos ---\n");
         
         List<Juego> juegos = db.obtenerJuegosActivos();
         
         if (juegos.isEmpty()) {
             System.out.println("No se encontraron juegos activos.");
         } else {
+            System.out.printf("| %-4s | %-20s | %-10s | %-10s | %-10s |\n", "ID", "Nombre", "Tipo", "Apuesta Min", "Mazos");
+            System.out.println("|------|----------------------|------------|------------|------------|");
             for (Juego juego : juegos) {
                 String tipoJuego = juego.getClass().getSimpleName();
                 double apuestaMin = 0.0;
+                int mazos = 0;
                 
                 if (juego instanceof Blackjack) {
-                    apuestaMin = ((Blackjack) juego).getApuestaMin();
+                    Blackjack bj = (Blackjack) juego;
+                    apuestaMin = bj.getApuestaMin();
+                    mazos = bj.getMazos();
                 } else if (juego instanceof HighLow) {
-                    apuestaMin = ((HighLow) juego).getApuestaMin();
+                    HighLow hl = (HighLow) juego;
+                    apuestaMin = hl.getApuestaMin();
+                    mazos = hl.getMazos();
                 }
                 
-                System.out.println(String.format("Juego [%s] - ID: %d, Nombre: %s, Apuesta Mín: %.2f",
-                        tipoJuego, juego.getId(), juego.getNombre(), apuestaMin));
+                System.out.printf("| %-4d | %-20s | %-10s | %-10.2f | %-10d |\n", 
+                    juego.getId(), 
+                    juego.getNombre(), 
+                    tipoJuego, 
+                    apuestaMin, 
+                    mazos
+                );
             }
         }
+        System.out.println("--------------------------------------------------------------------");
     }
 }

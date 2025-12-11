@@ -6,13 +6,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional; 
 
 public class Database {
 
-    
+    // Constantes de la Base de Datos
     public static final String DB_NAME = "CasinoDB.db";
     public static final String URL = "jdbc:sqlite:" + DB_NAME;
-    // CORRECCIÓN: Cambiado a public para ser visible en otras clases
+    // Público para ser usado en VentanaGestionUsuarios y VentanaRegistro
     public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**
@@ -39,15 +40,10 @@ public class Database {
                                 "email TEXT UNIQUE NOT NULL," +
                                 "password TEXT NOT NULL," +
                                 "fechaRegistro TEXT NOT NULL," +
-                                "rol TEXT NOT NULL)"; 
+                                "rol TEXT NOT NULL)";
+            stmt.execute(sqlUsuario);
 
-            // 2. Tabla Administrador (HIJA)
-            String sqlAdministrador = "CREATE TABLE IF NOT EXISTS Administrador (" +
-                                      "id INTEGER PRIMARY KEY," +
-                                      "nivelAcceso INTEGER NOT NULL," +
-                                      "FOREIGN KEY(id) REFERENCES Usuario(id) ON DELETE CASCADE)";
-
-            // 3. Tabla Jugador (HIJA)
+            // 2. Tabla Jugador (HIJA)
             String sqlJugador = "CREATE TABLE IF NOT EXISTS Jugador (" +
                                 "id INTEGER PRIMARY KEY," +
                                 "saldo REAL NOT NULL," +
@@ -55,353 +51,483 @@ public class Database {
                                 "totalGanado REAL NOT NULL," +
                                 "nivel INTEGER NOT NULL," +
                                 "FOREIGN KEY(id) REFERENCES Usuario(id) ON DELETE CASCADE)";
+            stmt.execute(sqlJugador);
 
-            // 4. Tabla Empleado (HIJA)
+            // 3. Tabla Empleado (HIJA de Usuario, incluye Admin)
             String sqlEmpleado = "CREATE TABLE IF NOT EXISTS Empleado (" +
-                                  "id INTEGER PRIMARY KEY," + 
-                                  "puesto TEXT NOT NULL," +
-                                  "activo BOOLEAN NOT NULL CHECK (activo IN (0, 1))," + 
-                                  "fechaInicio TEXT NOT NULL," +
-                                  "FOREIGN KEY (id) REFERENCES Usuario(id) ON DELETE CASCADE)";
+                                 "id INTEGER PRIMARY KEY," +
+                                 "puesto TEXT NOT NULL," +
+                                 "activo BOOLEAN NOT NULL," +
+                                 "fechaInicio TEXT NOT NULL," +
+                                 "FOREIGN KEY(id) REFERENCES Usuario(id) ON DELETE CASCADE)";
+            stmt.execute(sqlEmpleado);
 
-
-            // 5. Tabla Juego (PADRE)
+            // 4. Tabla Juego (PADRE)
             String sqlJuego = "CREATE TABLE IF NOT EXISTS Juego (" +
-                              "id INTEGER PRIMARY KEY," +
+                              "id INTEGER PRIMARY KEY," + 
                               "nombre TEXT UNIQUE NOT NULL," +
                               "fechaCreacion TEXT NOT NULL," +
-                              "activo INTEGER NOT NULL)";
+                              "activo BOOLEAN NOT NULL)";
+            stmt.execute(sqlJuego);
 
-            // 6. Tabla Blackjack (HIJA)
+            // 5. Tabla Blackjack (HIJA de Juego)
             String sqlBlackjack = "CREATE TABLE IF NOT EXISTS Blackjack (" +
                                   "id INTEGER PRIMARY KEY," +
                                   "mazos INTEGER NOT NULL," +
                                   "apuestaMin REAL NOT NULL," +
                                   "apuestaMax REAL NOT NULL," +
                                   "FOREIGN KEY(id) REFERENCES Juego(id) ON DELETE CASCADE)";
+            stmt.execute(sqlBlackjack);
 
-            // 7. Tabla HighLow (HIJA)
+            // 6. Tabla HighLow (HIJA de Juego)
             String sqlHighLow = "CREATE TABLE IF NOT EXISTS HighLow (" +
                                 "id INTEGER PRIMARY KEY," +
                                 "mazos INTEGER NOT NULL," +
                                 "apuestaMin REAL NOT NULL," +
                                 "apuestaMax REAL NOT NULL," +
                                 "FOREIGN KEY(id) REFERENCES Juego(id) ON DELETE CASCADE)";
-            
-            
-            stmt.executeUpdate(sqlUsuario);
-            stmt.executeUpdate(sqlAdministrador);
-            stmt.executeUpdate(sqlJugador);
-            stmt.executeUpdate(sqlEmpleado); 
-            stmt.executeUpdate(sqlJuego);
-            stmt.executeUpdate(sqlBlackjack);
-            stmt.executeUpdate(sqlHighLow);
-            
-            System.out.println("Tablas de la base de datos verificadas o creadas correctamente.");
+            stmt.execute(sqlHighLow);
 
         } catch (SQLException e) {
             System.err.println("Error al inicializar la base de datos: " + e.getMessage());
         }
     }
-    
-    
+
+
+    // =========================================================
+    // MÉTODOS DE GESTIÓN DE USUARIO (CRUD y Login)
+    // =========================================================
+
     /**
-     * Registra un usuario en la tabla principal y en la tabla hija correspondiente (Administrador, Jugador, Empleado).
+     * Registra un nuevo usuario (Jugador, Empleado o Administrador) en la BD.
+     * @param usuario El objeto Usuario a registrar.
+     * @throws SQLException Si el email ya existe o hay un error de DB.
      */
     public void registrar(Usuario usuario) throws SQLException {
-        
-        
-        String sqlUsuario = "INSERT INTO Usuario(nombre, email, password, fechaRegistro, rol) VALUES(?, ?, ?, ?, ?)";
-        long idUsuario = -1;
+        Connection conn = connect();
+        conn.setAutoCommit(false); // Iniciar transacción
 
-        try (Connection conn = connect();
-             PreparedStatement pstmtUsuario = conn.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
-
-            conn.setAutoCommit(false); 
-
-            pstmtUsuario.setString(1, usuario.getNombre());
-            pstmtUsuario.setString(2, usuario.getEmail());
-            pstmtUsuario.setString(3, usuario.getPassword());
-            pstmtUsuario.setString(4, usuario.getFechaRegistro().format(FORMATTER));
-            pstmtUsuario.setString(5, usuario.getRol().name());
-            pstmtUsuario.executeUpdate();
-
+        try {
+            // 1. Inserción en tabla Usuario (PADRE)
+            String sqlUsuario = "INSERT INTO Usuario (nombre, email, password, fechaRegistro, rol) VALUES (?, ?, ?, ?, ?)";
             
-            try (ResultSet rs = pstmtUsuario.getGeneratedKeys()) {
-                if (rs.next()) {
-                    idUsuario = rs.getLong(1);
-                    usuario.setId(idUsuario); 
+            // Usar Statement.RETURN_GENERATED_KEYS para obtener el ID
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+                pstmt.setString(1, usuario.getNombre());
+                pstmt.setString(2, usuario.getEmail());
+                pstmt.setString(3, usuario.getPassword());
+                pstmt.setString(4, usuario.getFechaRegistro().format(FORMATTER));
+                pstmt.setString(5, usuario.getRol().toString());
+                pstmt.executeUpdate();
+
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        long nuevoId = rs.getLong(1);
+                        usuario.setId(nuevoId); // Asignar el ID generado al objeto
+                        
+                        // 2. Inserción en tabla específica (HIJA)
+                        if (usuario instanceof Jugador) {
+                            registrarJugadorEspecifico(conn, (Jugador) usuario);
+                        } else if (usuario instanceof Empleado) {
+                            registrarEmpleadoEspecifico(conn, (Empleado) usuario);
+                        }
+                    }
                 }
             }
-            
-            
-            if (usuario instanceof Administrador) {
-                Administrador admin = (Administrador) usuario;
-                String sqlAdmin = "INSERT INTO Administrador(id, nivelAcceso) VALUES(?, ?)";
-                try (PreparedStatement pstmtAdmin = conn.prepareStatement(sqlAdmin)) {
-                    pstmtAdmin.setLong(1, idUsuario);
-                    pstmtAdmin.setInt(2, admin.getNivelAcceso());
-                    pstmtAdmin.executeUpdate();
-                }
-            } else if (usuario instanceof Jugador) {
-                Jugador jugador = (Jugador) usuario;
-                String sqlJugador = "INSERT INTO Jugador(id, saldo, numeroDePartidas, totalGanado, nivel) VALUES(?, ?, ?, ?, ?)";
-                try (PreparedStatement pstmtJugador = conn.prepareStatement(sqlJugador)) {
-                    pstmtJugador.setLong(1, idUsuario);
-                    pstmtJugador.setDouble(2, jugador.getSaldo());
-                    pstmtJugador.setInt(3, jugador.getNumeroDePartidas());
-                    pstmtJugador.setDouble(4, jugador.getTotalGanado());
-                    pstmtJugador.setInt(5, jugador.getNivel());
-                    pstmtJugador.executeUpdate();
-                }
-            } else if (usuario instanceof Empleado) { 
-                Empleado empleado = (Empleado) usuario;
-                String sqlEmpleado = "INSERT INTO Empleado(id, puesto, activo, fechaInicio) VALUES(?, ?, ?, ?)";
-                try (PreparedStatement pstmtEmpleado = conn.prepareStatement(sqlEmpleado)) {
-                    pstmtEmpleado.setLong(1, idUsuario);
-                    pstmtEmpleado.setString(2, empleado.getPuesto());
-                    pstmtEmpleado.setBoolean(3, empleado.isActivo());
-                    pstmtEmpleado.setString(4, empleado.getFechaInicio().format(FORMATTER));
-                    pstmtEmpleado.executeUpdate();
-                }
-            }
-
-            
-            conn.commit(); 
-            System.out.println(usuario.getClass().getSimpleName() + " registrado con éxito. ID: " + idUsuario);
-
+            conn.commit(); // Confirmar transacción
         } catch (SQLException e) {
-            
-            try (Connection conn = connect()) {
-                conn.rollback();
-            } catch (SQLException rollbackEx) {
-                // Manejo de error si el rollback falla
-            }
-            throw new SQLException("Error al registrar usuario: " + e.getMessage());
+            conn.rollback(); // Deshacer en caso de error
+            throw new SQLException("Error al registrar el usuario: " + e.getMessage(), e);
+        } finally {
+            conn.setAutoCommit(true);
+            conn.close();
         }
     }
 
+    // --- Métodos Auxiliares de Registro ---
+
+    private void registrarJugadorEspecifico(Connection conn, Jugador jugador) throws SQLException {
+        String sql = "INSERT INTO Jugador (id, saldo, numeroDePartidas, totalGanado, nivel) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, jugador.getId());
+            pstmt.setDouble(2, jugador.getSaldo());
+            pstmt.setInt(3, jugador.getNumeroDePartidas());
+            pstmt.setDouble(4, jugador.getTotalGanado());
+            pstmt.setInt(5, jugador.getNivel());
+            pstmt.executeUpdate();
+        }
+    }
+
+    private void registrarEmpleadoEspecifico(Connection conn, Empleado empleado) throws SQLException {
+        String sql = "INSERT INTO Empleado (id, puesto, activo, fechaInicio) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, empleado.getId());
+            pstmt.setString(2, empleado.getPuesto());
+            pstmt.setBoolean(3, empleado.isActivo());
+            pstmt.setString(4, empleado.getFechaInicio().format(FORMATTER));
+            pstmt.executeUpdate();
+        }
+    }
     
     /**
-     * Intenta autenticar a un usuario con un rol específico y carga los datos de la tabla hija.
+     * Intenta autenticar a un usuario.
+     * @param email Email del usuario.
+     * @param password Contraseña.
+     * @param rol Rol esperado (Jugador, Empleado, etc.).
+     * @return Objeto Usuario completo si las credenciales son válidas y el rol coincide, o null en caso contrario.
      */
-    public Usuario login(String email, String password, String rolString) {
-        
-        String sql = "SELECT id, nombre, fechaRegistro, rol FROM Usuario WHERE email = ? AND password = ? AND rol = ?";
-        
+    public Usuario login(String email, String password, RolUsuario rol) {
+        // En un sistema real, la contraseña no se almacenaría en texto plano.
+        String sql = "SELECT id FROM Usuario WHERE email = ? AND password = ? AND rol = ?";
+        long id = -1;
+
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, email);
             pstmt.setString(2, password);
-            pstmt.setString(3, rolString);
-            
+            pstmt.setString(3, rol.toString());
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    long id = rs.getLong("id");
-                    String nombre = rs.getString("nombre");
-                    String userPassword = password; 
-                    LocalDateTime fechaRegistro = LocalDateTime.parse(rs.getString("fechaRegistro"), FORMATTER);
-                    RolUsuario rol = RolUsuario.valueOf(rs.getString("rol"));
-                    
-                    // Cargar datos específicos del hijo
-                    if (rol == RolUsuario.ADMINISTRADOR) {
-                        String sqlAdmin = "SELECT nivelAcceso FROM Administrador WHERE id = ?";
-                        try (PreparedStatement pstmtAdmin = conn.prepareStatement(sqlAdmin)) {
-                            pstmtAdmin.setLong(1, id);
-                            try (ResultSet rsAdmin = pstmtAdmin.executeQuery()) {
-                                if (rsAdmin.next()) {
-                                    int nivelAcceso = rsAdmin.getInt("nivelAcceso");
-                                    return new Administrador(id, nombre, email, userPassword, fechaRegistro, nivelAcceso);
-                                }
-                            }
-                        }
-                    } else if (rol == RolUsuario.JUGADOR) {
-                        String sqlJugador = "SELECT saldo, numeroDePartidas, totalGanado, nivel FROM Jugador WHERE id = ?";
-                         try (PreparedStatement pstmtJugador = conn.prepareStatement(sqlJugador)) {
-                            pstmtJugador.setLong(1, id);
-                            try (ResultSet rsJugador = pstmtJugador.executeQuery()) {
-                                if (rsJugador.next()) {
-                                    double saldo = rsJugador.getDouble("saldo");
-                                    int numPartidas = rsJugador.getInt("numeroDePartidas");
-                                    double totalGanado = rsJugador.getDouble("totalGanado");
-                                    int nivel = rsJugador.getInt("nivel");
-                                    return new Jugador(id, nombre, email, userPassword, fechaRegistro, saldo, numPartidas, totalGanado, nivel);
-                                }
-                            }
-                        }
-                    } else if (rol == RolUsuario.EMPLEADO) { 
-                        String sqlEmpleado = "SELECT puesto, activo, fechaInicio FROM Empleado WHERE id = ?";
-                        try (PreparedStatement pstmtEmpleado = conn.prepareStatement(sqlEmpleado)) {
-                            pstmtEmpleado.setLong(1, id);
-                            try (ResultSet rsEmpleado = pstmtEmpleado.executeQuery()) {
-                                if (rsEmpleado.next()) {
-                                    String puesto = rsEmpleado.getString("puesto");
-                                    boolean activo = rsEmpleado.getBoolean("activo");
-                                    LocalDateTime fechaInicio = LocalDateTime.parse(rsEmpleado.getString("fechaInicio"), FORMATTER);
-                                    
-                                    // Usar el constructor completo de Empleado
-                                    return new Empleado(id, nombre, email, userPassword, fechaRegistro, puesto, activo, fechaInicio);
-                                }
-                            }
-                        }
-                    }
+                    id = rs.getLong("id");
                 }
             }
+
         } catch (SQLException e) {
-            System.err.println("Error de base de datos durante el login: " + e.getMessage());
+            System.err.println("Error en el login: " + e.getMessage());
+            return null;
         }
-        return null; 
+
+        if (id != -1) {
+            return obtenerUsuarioPorId(id);
+        }
+        return null;
     }
-    
+
     /**
-     * Obtiene una lista de todos los usuarios registrados en la base de datos (Admin, Jugador, Empleado).
+     * Obtiene una lista de todos los usuarios registrados, cargando sus datos específicos.
+     * @return Lista de objetos Usuario.
      */
-    public List<Usuario> getTodosLosUsuarios() {
+    public List<Usuario> obtenerTodosLosUsuarios() {
         List<Usuario> usuarios = new ArrayList<>();
-        String sql = "SELECT id, nombre, email, password, fechaRegistro, rol FROM Usuario";
+        String sql = "SELECT id FROM Usuario";
+        
         try (Connection conn = connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
             while (rs.next()) {
                 long id = rs.getLong("id");
-                String nombre = rs.getString("nombre");
-                String email = rs.getString("email");
-                String password = rs.getString("password");
-                LocalDateTime fechaReg = LocalDateTime.parse(rs.getString("fechaRegistro"), FORMATTER);
-                RolUsuario rolEnum = RolUsuario.valueOf(rs.getString("rol"));
-                
-                if (rolEnum == RolUsuario.JUGADOR) {
-                    usuarios.add(getJugadorById(id, nombre, email, password, fechaReg));
-                } else if (rolEnum == RolUsuario.EMPLEADO) {
-                    usuarios.add(getEmpleadoById(id, nombre, email, password, fechaReg));
-                } else if (rolEnum == RolUsuario.ADMINISTRADOR) {
-                    usuarios.add(getAdministradorById(id, nombre, email, password, fechaReg));
+                // Llama al método que carga el objeto completo por ID
+                Usuario u = obtenerUsuarioPorId(id);
+                if (u != null) {
+                    usuarios.add(u);
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error en Database.getTodosLosUsuarios: " + e.getMessage());
+            System.err.println("Error al obtener todos los usuarios: " + e.getMessage());
         }
         return usuarios;
     }
-
-    // Métodos auxiliares para obtener subclases (Implementación asumida)
-    private Jugador getJugadorById(long id, String nombre, String email, String password, LocalDateTime fechaReg) throws SQLException {
-        // [Implementación para leer de la tabla Jugador]
-        return new Jugador(id, nombre, email, password, fechaReg, 0.0, 0, 0.0, 0); // Placeholder
-    }
-    private Empleado getEmpleadoById(long id, String nombre, String email, String password, LocalDateTime fechaReg) throws SQLException {
-        // [Implementación para leer de la tabla Empleado]
-        return new Empleado(id, nombre, email, password, fechaReg, "Cajero", true, LocalDateTime.now()); // Placeholder
-    }
-    private Administrador getAdministradorById(long id, String nombre, String email, String password, LocalDateTime fechaReg) throws SQLException {
-        // [Implementación para leer de la tabla Administrador]
-        return new Administrador(id, nombre, email, password, fechaReg, 1); // Placeholder
-    }
-
-
     
-    public boolean existeJuegoPorNombre(String nombre) {
-        String sql = "SELECT COUNT(*) FROM Juego WHERE nombre = ?";
+    /**
+     * Obtiene un usuario (Jugador, Empleado, Administrador) por su ID.
+     * **ESTE ES EL MÉTODO CLAVE para la VentanaGestionUsuarios.**
+     * @param id El ID del usuario.
+     * @return El objeto Usuario completo o null si no se encuentra.
+     */
+    public Usuario obtenerUsuarioPorId(long id) {
+        String sqlUsuario = "SELECT nombre, email, password, fechaRegistro, rol FROM Usuario WHERE id = ?";
+        
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sqlUsuario)) {
+            
+            pstmt.setLong(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    // Datos base de la tabla Usuario
+                    String nombre = rs.getString("nombre");
+                    String email = rs.getString("email");
+                    String password = rs.getString("password");
+                    LocalDateTime fechaRegistro = LocalDateTime.parse(rs.getString("fechaRegistro"), FORMATTER);
+                    String rolStr = rs.getString("rol");
+                    
+                    RolUsuario rol = RolUsuario.valueOf(rolStr.toUpperCase());
+                    
+                    // Cargar datos específicos según el rol
+                    if (rol == RolUsuario.JUGADOR) {
+                        return obtenerJugadorEspecifico(conn, id, nombre, email, password, fechaRegistro);
+                    } else { // EMPLEADO o ADMINISTRADOR
+                        return obtenerEmpleadoEspecifico(conn, id, nombre, email, password, fechaRegistro, rol);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener usuario por ID: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Método auxiliar para cargar los datos de Jugador.
+     */
+    private Jugador obtenerJugadorEspecifico(Connection conn, long id, String nombre, String email, String password, LocalDateTime fechaRegistro) throws SQLException {
+        String sqlJugador = "SELECT saldo, numeroDePartidas, totalGanado, nivel FROM Jugador WHERE id = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sqlJugador)) {
+            pstmt.setLong(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    double saldo = rs.getDouble("saldo");
+                    int numeroDePartidas = rs.getInt("numeroDePartidas");
+                    double totalGanado = rs.getDouble("totalGanado");
+                    int nivel = rs.getInt("nivel");
+                    
+                    return new Jugador(id, nombre, email, password, fechaRegistro, 
+                                       saldo, numeroDePartidas, totalGanado, nivel);
+                }
+            }
+        }
+        return null; 
+    }
+
+
+    /**
+     * Método auxiliar para cargar los datos de Empleado o Administrador.
+     * * CORRECCIÓN CLAVE: Se ajusta la llamada a los constructores para que coincida 
+     * con la firma (8 argumentos: ..., puesto, fechaInicio, activo).
+     */
+    private Empleado obtenerEmpleadoEspecifico(Connection conn, long id, String nombre, String email, String password, LocalDateTime fechaRegistro, RolUsuario rol) throws SQLException {
+        String sqlEmpleado = "SELECT puesto, activo, fechaInicio FROM Empleado WHERE id = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sqlEmpleado)) {
+            pstmt.setLong(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String puesto = rs.getString("puesto");
+                    // Nota: Los datos se cargan en el orden: puesto, activo, fechaInicio
+                    boolean activo = rs.getBoolean("activo");
+                    LocalDateTime fechaInicio = LocalDateTime.parse(rs.getString("fechaInicio"), FORMATTER);
+                    
+                    // La firma del constructor espera: (..., puesto, fechaInicio, activo)
+                    
+                    if (rol == RolUsuario.ADMINISTRADOR) {
+                        // CORRECCIÓN 1: Se invierte 'activo' y 'fechaInicio' para coincidir con el constructor de Administrador
+                        return new Administrador(id, nombre, email, password, fechaRegistro, 
+                                                puesto, fechaInicio, activo); 
+                    } else {
+                        // CORRECCIÓN 2: Se eliminan 9º argumento 'rol' y se invierte 'activo' y 'fechaInicio' para coincidir con el constructor de Empleado (8 argumentos)
+                        return new Empleado(id, nombre, email, password, fechaRegistro, 
+                                            puesto, fechaInicio, activo);
+                    }
+                }
+            }
+        }
+        return null; 
+    }
+    
+    /**
+     * Actualiza la información de un usuario (base y específica).
+     * Nota: No permite cambiar el email ni la fecha de registro en esta versión.
+     * @param usuario El objeto Usuario con los datos actualizados.
+     */
+    public void actualizarUsuario(Usuario usuario) throws SQLException {
+        Connection conn = connect();
+        conn.setAutoCommit(false); 
+
+        try {
+            // 1. Actualizar tabla Usuario (PADRE)
+            String sqlUsuario = "UPDATE Usuario SET nombre = ?, password = ?, rol = ? WHERE id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlUsuario)) {
+                pstmt.setString(1, usuario.getNombre());
+                pstmt.setString(2, usuario.getPassword());
+                pstmt.setString(3, usuario.getRol().toString());
+                pstmt.setLong(4, usuario.getId());
+                pstmt.executeUpdate();
+            }
+
+            // 2. Actualizar tabla específica (HIJA)
+            if (usuario instanceof Jugador) {
+                actualizarJugadorEspecifico(conn, (Jugador) usuario);
+            } else if (usuario instanceof Empleado) {
+                actualizarEmpleadoEspecifico(conn, (Empleado) usuario);
+            }
+            conn.commit(); 
+        } catch (SQLException e) {
+            conn.rollback(); 
+            throw new SQLException("Error al actualizar el usuario: " + e.getMessage(), e);
+        } finally {
+            conn.setAutoCommit(true);
+            conn.close();
+        }
+    }
+
+    private void actualizarJugadorEspecifico(Connection conn, Jugador jugador) throws SQLException {
+        String sql = "UPDATE Jugador SET saldo = ?, numeroDePartidas = ?, totalGanado = ?, nivel = ? WHERE id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDouble(1, jugador.getSaldo());
+            pstmt.setInt(2, jugador.getNumeroDePartidas());
+            pstmt.setDouble(3, jugador.getTotalGanado());
+            pstmt.setInt(4, jugador.getNivel());
+            pstmt.setLong(5, jugador.getId());
+            pstmt.executeUpdate();
+        }
+    }
+    
+    private void actualizarEmpleadoEspecifico(Connection conn, Empleado empleado) throws SQLException {
+        String sql = "UPDATE Empleado SET puesto = ?, activo = ?, fechaInicio = ? WHERE id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, empleado.getPuesto());
+            pstmt.setBoolean(2, empleado.isActivo());
+            pstmt.setString(3, empleado.getFechaInicio().format(FORMATTER));
+            pstmt.setLong(4, empleado.getId());
+            pstmt.executeUpdate();
+        }
+    }
+    
+    /**
+     * Actualiza el saldo de un jugador y opcionalmente sus estadísticas.
+     * @param jugador El objeto Jugador.
+     * @param cambioSaldo La cantidad a sumar o restar.
+     * @param actualizarEstadisticas Si es true, incrementa el número de partidas.
+     */
+    public void actualizarSaldoJugador(Jugador jugador, double cambioSaldo, boolean actualizarEstadisticas) throws SQLException {
+        // En una aplicación real, esta lógica sería más compleja y se registrarían movimientos.
+        double nuevoSaldo = jugador.getSaldo() + cambioSaldo;
+        if (nuevoSaldo < 0) {
+            throw new SQLException("El saldo no puede ser negativo.");
+        }
+        jugador.setSaldo(nuevoSaldo);
+
+        // Si es una partida ganada, actualizar total ganado (simplificado)
+        if (cambioSaldo > 0) {
+            jugador.setTotalGanado(jugador.getTotalGanado() + cambioSaldo);
+        }
+
+        if (actualizarEstadisticas) {
+            jugador.setNumeroDePartidas(jugador.getNumeroDePartidas() + 1);
+        }
+
+        // Simplemente llamamos al método de actualización genérico para persistir los cambios
+        actualizarJugadorEspecifico(connect(), jugador); 
+    }
+
+    // Método para simplificar la actualización de saldo sin cambiar estadísticas
+    public void actualizarSaldoJugador(Jugador jugador, double cambioSaldo) throws SQLException {
+        actualizarSaldoJugador(jugador, cambioSaldo, false);
+    }
+    
+    /**
+     * Elimina un usuario por su ID. Las claves foráneas se encargarán de eliminar 
+     * el registro de las tablas hijas (Jugador/Empleado).
+     * @param id ID del usuario a eliminar.
+     * @throws SQLException Si ocurre un error de DB.
+     */
+    public void eliminarUsuario(long id) throws SQLException {
+        String sql = "DELETE FROM Usuario WHERE id = ?";
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, nombre);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
+            pstmt.setLong(1, id);
+            int filasAfectadas = pstmt.executeUpdate();
+            if (filasAfectadas == 0) {
+                throw new SQLException("No se encontró ningún usuario con ID: " + id);
             }
-        } catch (SQLException e) {
-            System.err.println("Error al verificar existencia del juego: " + e.getMessage());
         }
-        return false;
     }
 
+
+    // =========================================================
+    // MÉTODOS DE GESTIÓN DE JUEGO (CRUD)
+    // =========================================================
     
+    /**
+     * Registra un nuevo juego.
+     * @param juego El objeto Juego a registrar.
+     * @throws SQLException Si el nombre del juego ya existe o hay un error de DB.
+     */
     public void registrarJuego(Juego juego) throws SQLException {
-        if (existeJuegoPorNombre(juego.getNombre())) {
+        Connection conn = connect();
+        conn.setAutoCommit(false);
+
+        try {
+            // 1. Inserción en tabla Juego (PADRE)
+            String sqlJuego = "INSERT INTO Juego (nombre, fechaCreacion, activo) VALUES (?, ?, ?)";
             
-            System.out.println("El juego '" + juego.getNombre() + "' ya existe. No se registrará de nuevo.");
-            return;
-        }
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlJuego, Statement.RETURN_GENERATED_KEYS)) {
+                pstmt.setString(1, juego.getNombre());
+                pstmt.setString(2, juego.getFechaCreacion().format(FORMATTER));
+                pstmt.setBoolean(3, juego.isActivo());
+                pstmt.executeUpdate();
 
-        String sqlJuego = "INSERT INTO Juego(nombre, fechaCreacion, activo) VALUES(?, ?, ?)";
-        long idJuego = -1;
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        long nuevoId = rs.getLong(1);
+                        juego.setId(nuevoId); 
 
-        try (Connection conn = connect();
-             PreparedStatement pstmtJuego = conn.prepareStatement(sqlJuego, Statement.RETURN_GENERATED_KEYS)) {
-            
-            conn.setAutoCommit(false); 
-
-            pstmtJuego.setString(1, juego.getNombre());
-            pstmtJuego.setString(2, juego.getFechaCreacion().format(FORMATTER));
-            pstmtJuego.setBoolean(3, juego.isActivo());
-            pstmtJuego.executeUpdate();
-
-            
-            try (ResultSet rs = pstmtJuego.getGeneratedKeys()) {
-                if (rs.next()) {
-                    idJuego = rs.getLong(1);
-                    juego.setId(idJuego); 
+                        // 2. Inserción en tabla específica (HIJA)
+                        if (juego instanceof Blackjack) {
+                            registrarBlackjackEspecifico(conn, (Blackjack) juego);
+                        } else if (juego instanceof HighLow) {
+                            registrarHighLowEspecifico(conn, (HighLow) juego);
+                        }
+                    }
                 }
             }
-
-            
-            if (juego instanceof Blackjack) {
-                Blackjack bj = (Blackjack) juego;
-                String sqlBj = "INSERT INTO Blackjack(id, mazos, apuestaMin, apuestaMax) VALUES(?, ?, ?, ?)";
-                try (PreparedStatement pstmtBj = conn.prepareStatement(sqlBj)) {
-                    pstmtBj.setLong(1, idJuego);
-                    pstmtBj.setInt(2, bj.getMazos());
-                    pstmtBj.setDouble(3, bj.getApuestaMin());
-                    pstmtBj.setDouble(4, bj.getApuestaMax());
-                    pstmtBj.executeUpdate();
-                }
-            } else if (juego instanceof HighLow) {
-                HighLow hl = (HighLow) juego;
-                String sqlHl = "INSERT INTO HighLow(id, mazos, apuestaMin, apuestaMax) VALUES(?, ?, ?, ?)";
-                try (PreparedStatement pstmtHl = conn.prepareStatement(sqlHl)) {
-                    pstmtHl.setLong(1, idJuego);
-                    pstmtHl.setInt(2, hl.getMazos());
-                    pstmtHl.setDouble(3, hl.getApuestaMin());
-                    pstmtHl.setDouble(4, hl.getApuestaMax());
-                    pstmtHl.executeUpdate();
-                }
-            }
-            
-            conn.commit();
-            System.out.println("Juego '" + juego.getNombre() + "' registrado con éxito. ID: " + idJuego);
-
+            conn.commit(); 
         } catch (SQLException e) {
-            try (Connection conn = connect()) {
-                conn.rollback();
-            } catch (SQLException rollbackEx) {
-                // Manejo de error si el rollback falla
-            }
-            throw new SQLException("Error al registrar juego: " + e.getMessage());
+            conn.rollback(); 
+            throw new SQLException("Error al registrar el juego: " + e.getMessage(), e);
+        } finally {
+            conn.setAutoCommit(true);
+            conn.close();
         }
     }
     
+    private void registrarBlackjackEspecifico(Connection conn, Blackjack blackjack) throws SQLException {
+        String sql = "INSERT INTO Blackjack (id, mazos, apuestaMin, apuestaMax) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, blackjack.getId());
+            pstmt.setInt(2, blackjack.getMazos());
+            pstmt.setDouble(3, blackjack.getApuestaMin());
+            pstmt.setDouble(4, blackjack.getApuestaMax());
+            pstmt.executeUpdate();
+        }
+    }
 
+    private void registrarHighLowEspecifico(Connection conn, HighLow highLow) throws SQLException {
+        String sql = "INSERT INTO HighLow (id, mazos, apuestaMin, apuestaMax) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, highLow.getId());
+            pstmt.setInt(2, highLow.getMazos());
+            pstmt.setDouble(3, highLow.getApuestaMin());
+            pstmt.setDouble(4, highLow.getApuestaMax());
+            pstmt.executeUpdate();
+        }
+    }
     
+    /**
+     * Obtiene todos los juegos marcados como activos.
+     * @return Lista de objetos Juego.
+     */
     public List<Juego> obtenerJuegosActivos() {
         List<Juego> juegos = new ArrayList<>();
-        String sql = "SELECT id, nombre, fechaCreacion, activo FROM Juego WHERE activo = 1";
+        String sqlJuego = "SELECT id, nombre, fechaCreacion FROM Juego WHERE activo = TRUE";
         
         try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmtJuego = conn.prepareStatement(sqlJuego);
+             ResultSet rsJuego = pstmtJuego.executeQuery()) {
             
-            while (rs.next()) {
-                long id = rs.getLong("id");
-                String nombre = rs.getString("nombre");
-                LocalDateTime fechaCreacion = LocalDateTime.parse(rs.getString("fechaCreacion"), FORMATTER);
-                boolean activo = rs.getBoolean("activo");
+            while (rsJuego.next()) {
+                long id = rsJuego.getLong("id");
+                String nombre = rsJuego.getString("nombre");
+                LocalDateTime fechaCreacion = LocalDateTime.parse(rsJuego.getString("fechaCreacion"), FORMATTER);
                 
+                // Asumimos que activo es TRUE por el WHERE clause
+                boolean activo = true; 
                 
-                
-                
+                // 1. Intentar cargar como Blackjack
                 String sqlBlackjack = "SELECT mazos, apuestaMin, apuestaMax FROM Blackjack WHERE id = ?";
                 try (PreparedStatement pstmtBj = conn.prepareStatement(sqlBlackjack)) {
                     pstmtBj.setLong(1, id);
@@ -411,12 +537,12 @@ public class Database {
                             double apuestaMin = rsBj.getDouble("apuestaMin");
                             double apuestaMax = rsBj.getDouble("apuestaMax");
                             juegos.add(new Blackjack(id, nombre, fechaCreacion, activo, mazos, apuestaMin, apuestaMax));
-                            continue; 
+                            continue; // Si es Blackjack, pasa al siguiente ID
                         }
                     }
                 }
                 
-                
+                // 2. Intentar cargar como HighLow
                 String sqlHighLow = "SELECT mazos, apuestaMin, apuestaMax FROM HighLow WHERE id = ?";
                 try (PreparedStatement pstmtHl = conn.prepareStatement(sqlHighLow)) {
                     pstmtHl.setLong(1, id);
@@ -426,12 +552,13 @@ public class Database {
                             double apuestaMin = rsHl.getDouble("apuestaMin");
                             double apuestaMax = rsHl.getDouble("apuestaMax");
                             juegos.add(new HighLow(id, nombre, fechaCreacion, activo, mazos, apuestaMin, apuestaMax));
+                            // No hay más tipos de juego en esta versión, así que no se necesita 'continue'
                         }
                     }
                 }
             }
         } catch (SQLException e) {
-            System.out.println("Error al obtener juegos activos: " + e.getMessage());
+            System.err.println("Error al obtener juegos activos: " + e.getMessage());
         }
         return juegos;
     }

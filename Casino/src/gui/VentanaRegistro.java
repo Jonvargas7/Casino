@@ -17,6 +17,8 @@ public class VentanaRegistro extends JDialog {
     private JTextField emailField;
     private JPasswordField passwordField;
     private JTextField initialBalanceField;
+    private JButton registerButton; // Añadido
+    private JButton cancelButton; // Añadido
 
     /**
      * Constructor para VentanaRegistro.
@@ -30,7 +32,7 @@ public class VentanaRegistro extends JDialog {
         
         setLayout(new BorderLayout(10, 10));
         
-        
+        // --- Panel de Campos ---
         JPanel fieldPanel = new JPanel(new GridLayout(5, 2, 10, 10));
         
         fieldPanel.add(new JLabel("Nombre Completo:"));
@@ -46,37 +48,47 @@ public class VentanaRegistro extends JDialog {
         fieldPanel.add(passwordField);
 
         fieldPanel.add(new JLabel("Saldo Inicial (€):"));
-        initialBalanceField = new JTextField("0.0", 20);
+        initialBalanceField = new JTextField("100.00", 20); // Valor por defecto
         fieldPanel.add(initialBalanceField);
-        
-        fieldPanel.add(new JLabel("Rol:"));
-        fieldPanel.add(new JLabel("JUGADOR")); // Rol fijo
 
         
-        JButton registerButton = new JButton("Confirmar Registro");
-        registerButton.addActionListener(e -> performRegistration());
+        // --- Panel de Botones ---
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        registerButton = new JButton("Registrarse"); // Inicialización
+        cancelButton = new JButton("Cancelar"); // Inicialización
+
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(registerButton);
+
+        
+        // --- Configuración de Listeners ---
+        registerButton.addActionListener(e -> attemptRegistration());
+        cancelButton.addActionListener(e -> dispose());
         
         
+        // --- Ensamblaje de la Ventana ---
         add(fieldPanel, BorderLayout.CENTER);
-        add(registerButton, BorderLayout.SOUTH);
-        ((JComponent) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        add(buttonPanel, BorderLayout.SOUTH);
         
+        
+        // Configuración final de la ventana
         pack();
         setLocationRelativeTo(parent);
+        setResizable(false);
     }
 
-    private void performRegistration() {
+    private void attemptRegistration() {
         String name = nameField.getText().trim();
         String email = emailField.getText().trim();
-        String password = new String(passwordField.getPassword());
-        double initialBalance;
-
-       
+        @SuppressWarnings("deprecation")
+        String password = passwordField.getText(); 
+        
         if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Todos los campos deben ser completados.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
+        double initialBalance;
         try {
             initialBalance = Double.parseDouble(initialBalanceField.getText().replace(',', '.')); // Soporta coma decimal
             if (initialBalance < 0) {
@@ -88,9 +100,9 @@ public class VentanaRegistro extends JDialog {
             return;
         }
 
-        
+        // 1. Crear el objeto Jugador
         Jugador nuevoJugador = new Jugador(
-            0, 
+            0, // ID 0 para que la DB le asigne uno
             name, 
             email, 
             password, 
@@ -98,11 +110,12 @@ public class VentanaRegistro extends JDialog {
             initialBalance,
             0, 
             0.0, 
-            1 
+            1 // Nivel inicial
         );
 
+        // 2. Intentar el registro
         try {
-            
+            // CORRECCIÓN: Se llama al método genérico registrar(Usuario)
             database.registrar(nuevoJugador); 
             logger.info("Registro exitoso para: " + email);
             JOptionPane.showMessageDialog(this, 
