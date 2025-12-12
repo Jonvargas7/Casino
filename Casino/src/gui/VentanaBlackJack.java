@@ -20,7 +20,7 @@ public class VentanaBlackJack extends JFrame {
     private double saldo;
     private double apuesta = 0.0;
     private Propiedades props;
-
+//tamaño de las cartas
     private static final int CARD_W = 100;
     private static final int CARD_H = 140;
 
@@ -56,6 +56,7 @@ public class VentanaBlackJack extends JFrame {
         this.saldo = j.getSaldo();
         this.props = new Propiedades();
         props.cargar();
+        //problemas con la carga de imagenes daba muchos errores.
         System.out.println("=== DEBUG IMAGENES CARTAS ===");
         System.out.println("Working dir: " + System.getProperty("user.dir"));
         String[] claves = {"a","2","3","4","5","6","7","8","9","10","j","q","k","back"};
@@ -317,7 +318,7 @@ public class VentanaBlackJack extends JFrame {
         if (baraja.isEmpty()) iniciarBaraja();
         return baraja.remove(0);
     }
-
+//calculo de valores
     private int valor(List<Integer> mano) {
         int suma = 0;
         int numAses = 0;
