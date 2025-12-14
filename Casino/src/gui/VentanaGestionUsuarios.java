@@ -64,7 +64,6 @@ public class VentanaGestionUsuarios extends JDialog {
         } else if (usuarioLogeado instanceof Empleado) {
             logger.info("Empleado logeado (" + usuarioLogeado.getEmail() + ") no tiene permiso para ver la pestaña de gestión de Empleados/Admin.");
         }
-        // -----------------------------------------------------------------------
 
         add(tabbedPane, BorderLayout.CENTER);
         
@@ -96,7 +95,6 @@ public class VentanaGestionUsuarios extends JDialog {
 
            
             if (usuarioLogeado instanceof Administrador) {
-                // Filtramos a todos los Empleados (que incluye Administrador)
                 List<Empleado> empleados = todosUsuarios.stream()
                         .filter(u -> u instanceof Empleado)
                         .map(u -> (Empleado) u)
@@ -199,7 +197,7 @@ public class VentanaGestionUsuarios extends JDialog {
         if (usuarioLogeado instanceof Administrador) {
             tienePermiso = true; 
         } else if (usuarioLogeado instanceof Empleado) {
-            rolForzado = "JUGADOR"; // Empleado solo puede crear Jugadores
+            rolForzado = "JUGADOR"; 
             tienePermiso = true; 
         } else { 
             logger.warning("Usuario sin permisos (" + usuarioLogeado.getClass().getSimpleName() + ") intentó usar Añadir.");
@@ -238,19 +236,16 @@ public class VentanaGestionUsuarios extends JDialog {
         if (usuarioLogeado instanceof Administrador) {
             tienePermiso = true;
         } else if (usuarioLogeado instanceof Empleado) {
-            // Empleado puede editar Jugadores o sus propios datos
             if (seleccionado instanceof Jugador || esAutoEdicion) {
                  tienePermiso = true;
             }
-        } else { // Jugador logeado
-            // Jugador solo puede auto-editarse
+        } else { 
             if (esAutoEdicion) {
                 tienePermiso = true;
             }
         }
         
         if (tienePermiso) {
-            // Abrir la nueva ventana de formulario para Editar
             VentanaFormularioUsuario ventana = new VentanaFormularioUsuario(
                 (JFrame) SwingUtilities.getWindowAncestor(this), 
                 this, 
@@ -275,7 +270,6 @@ public class VentanaGestionUsuarios extends JDialog {
             return;
         }
         
-        // No se puede eliminar a uno mismo
         if (seleccionado.getId() == usuarioLogeado.getId()) {
              JOptionPane.showMessageDialog(this, 
                 "Permiso Denegado: No puede eliminarse a sí mismo.", 
@@ -297,7 +291,6 @@ public class VentanaGestionUsuarios extends JDialog {
             tienePermiso = true;
             
         } else if (usuarioLogeado instanceof Empleado) {
-            // Empleado solo puede eliminar Jugadores
             if (seleccionado instanceof Jugador) {
                 tienePermiso = true;
             } else {
@@ -306,7 +299,7 @@ public class VentanaGestionUsuarios extends JDialog {
                     "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-        } else { // Jugador
+        } else { 
             JOptionPane.showMessageDialog(this, 
                 "Permiso Denegado: Un Jugador no tiene permisos para eliminar usuarios.", 
                 "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
@@ -368,7 +361,6 @@ public class VentanaGestionUsuarios extends JDialog {
              return null;
         }
 
-        // Recuperar el usuario completo de la base de datos
         try {
             Usuario u = database.obtenerUsuarioPorId(id);
             return u;

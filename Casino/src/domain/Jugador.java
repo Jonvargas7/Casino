@@ -10,9 +10,7 @@ public class Jugador extends Usuario {
 
     public Jugador() {}
 
-    /**
-     * Constructor para CARGAR desde la DB (con ID).
-     */
+    
     public Jugador(long id, String nombre, String email, String password, LocalDateTime fechaRegistro,
                    double saldo, int numeroDePartidas, double totalGanado, int nivel) {
         super(id, nombre, email, password, fechaRegistro, RolUsuario.JUGADOR);
@@ -22,9 +20,7 @@ public class Jugador extends Usuario {
         this.nivel = nivel;
     }
 
-    /**
-     * Constructor para CREAR un nuevo Jugador (SIN ID).
-     */
+    
     public Jugador(String nombre, String email, String password, LocalDateTime fechaRegistro,
                    double saldo, int numeroDePartidas, double totalGanado, int nivel) {
         super(nombre, email, password, fechaRegistro, RolUsuario.JUGADOR);
@@ -38,8 +34,7 @@ public class Jugador extends Usuario {
     public double getSaldo() {
 		return saldo;
 	}
-// ... (resto de getters, setters y toString)
-// ...
+
 
 	public int getNumeroDePartidas() {
 		return numeroDePartidas;

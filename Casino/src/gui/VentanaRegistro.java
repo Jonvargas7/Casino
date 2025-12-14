@@ -2,7 +2,6 @@ package gui;
 
 import domain.Jugador;
 import gestor.Database;
-
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
@@ -21,13 +20,10 @@ public class VentanaRegistro extends JDialog {
     private JButton cancelButton;
 
     public VentanaRegistro(JFrame parent, Database database) {
-        
         super(parent, "Registro de Nuevo Jugador", true);
         this.database = database;
         
         setLayout(new BorderLayout(10, 10));
-        
-        
         JPanel fieldPanel = new JPanel(new GridLayout(5, 2, 10, 10));
         
         fieldPanel.add(new JLabel("Nombre Completo:"));
@@ -46,8 +42,6 @@ public class VentanaRegistro extends JDialog {
         initialBalanceField = new JTextField("100.00", 20);
         fieldPanel.add(initialBalanceField);
 
-        
-        
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         registerButton = new JButton("Registrarse");
         cancelButton = new JButton("Cancelar");
@@ -55,18 +49,11 @@ public class VentanaRegistro extends JDialog {
         buttonPanel.add(cancelButton);
         buttonPanel.add(registerButton);
 
-        
-        
         registerButton.addActionListener(e -> attemptRegistration());
         cancelButton.addActionListener(e -> dispose());
         
-        
-        
-        
         add(fieldPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-        
-        
         
         pack();
         setLocationRelativeTo(parent);
@@ -96,7 +83,6 @@ public class VentanaRegistro extends JDialog {
             return;
         }
 
-        
         Jugador nuevoJugador = new Jugador(
             0,
             name,
@@ -109,10 +95,8 @@ public class VentanaRegistro extends JDialog {
             1
         );
 
-        
         try {
-            
-            database.registrar(nuevoJugador);
+            database.registrarUsuario(nuevoJugador);
             logger.info("Registro exitoso para: " + email);
             JOptionPane.showMessageDialog(this,
                 "¡Registro exitoso! Ya puedes iniciar sesión.",

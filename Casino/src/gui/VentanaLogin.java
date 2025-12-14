@@ -5,9 +5,7 @@ import domain.Empleado;
 import domain.Jugador;
 import domain.Usuario;
 import domain.RolUsuario;
-
 import gestor.Database;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
@@ -29,7 +27,6 @@ public class VentanaLogin extends JFrame {
         this.database = database;
         this.onLoginSuccess = onLoginSuccess;
         setTitle("Casino Login");
-        
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         setSize(400, 250);
@@ -63,7 +60,6 @@ public class VentanaLogin extends JFrame {
         add(fieldPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        
         loginButton.addActionListener(e -> attemptLogin());
         registerButton.addActionListener(e -> openRegisterDialog());
 
@@ -81,10 +77,8 @@ public class VentanaLogin extends JFrame {
         }
 
         try {
-            
             RolUsuario rol = RolUsuario.valueOf(rolSeleccionadoStr);
-            
-            Usuario usuario = database.login(email, password, rol);
+            Usuario usuario = database.loginUsuario(email, password, rol);
 
             if (usuario != null) {
                 String mensaje = String.format("Bienvenido %s! Rol: %s", usuario.getNombre(), rol);
@@ -109,14 +103,11 @@ public class VentanaLogin extends JFrame {
                 JOptionPane.showMessageDialog(this, "Credenciales incorrectas o Rol no coincide.", "Error de Autenticación", JOptionPane.ERROR_MESSAGE);
             }
         } catch (IllegalArgumentException e) {
-            
             JOptionPane.showMessageDialog(this, "Error: Rol de usuario no válido.", "Error Interno", JOptionPane.ERROR_MESSAGE);
         }
     }
     
     private void openRegisterDialog() {
-        
-        
-        JOptionPane.showMessageDialog(this, "Lógica de registro pendiente. Usa: player@casino.com / player123", "Info", JOptionPane.INFORMATION_MESSAGE);
+        new VentanaRegistro(this, database);
     }
 }
