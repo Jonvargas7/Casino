@@ -2,7 +2,6 @@ package gui;
 
 import domain.*;
 import gestor.Database;
-
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
@@ -18,14 +17,12 @@ public class VentanaFormularioUsuario extends JDialog {
     private String rolPermitidoParaCrear; 
     
     private VentanaGestionUsuarios ventanaGestionPadre; 
-
     
     private JTextField txtNombre = new JTextField(20);
     private JTextField txtEmail = new JTextField(20);
     private JPasswordField txtPassword = new JPasswordField(20);
     private JComboBox<String> comboRol; 
     
-   
     private JPanel panelEspecifico = new JPanel(new GridBagLayout()); 
     
     private JTextField txtSaldo = new JTextField(20);
@@ -38,7 +35,6 @@ public class VentanaFormularioUsuario extends JDialog {
     private JCheckBox chkActivo = new JCheckBox("Activo");
 
     private JButton btnGuardar = new JButton("Guardar");
-
 
     public VentanaFormularioUsuario(JFrame parentFrame, VentanaGestionUsuarios ventanaGestionPadre,
                                     Database database, Usuario usuarioLogeado, 
@@ -57,13 +53,12 @@ public class VentanaFormularioUsuario extends JDialog {
 
         initComponents();
         
-        
         if (usuarioAEditar != null) {
             cargarDatosSiEsEdicion();
-            mostrarCamposEspecificos(usuarioAEditar.getRol(), true); // EDICIÓN
+            mostrarCamposEspecificos(usuarioAEditar.getRol(), true);
         } else {
             RolUsuario rolInicial = determinarRolInicial();
-            mostrarCamposEspecificos(rolInicial, false); // CREACIÓN
+            mostrarCamposEspecificos(rolInicial, false);
         }
     }
     
@@ -91,20 +86,15 @@ public class VentanaFormularioUsuario extends JDialog {
         
         int y = 0;
 
-      
-        
-        
         gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
         panelFormularioBase.add(new JLabel("Nombre:"), gbc);
         gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
         panelFormularioBase.add(txtNombre, gbc);
 
-       
         gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
         panelFormularioBase.add(new JLabel("Email:"), gbc);
         gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
         panelFormularioBase.add(txtEmail, gbc);
-        
         
         if (usuarioAEditar == null) {
             gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
@@ -115,17 +105,14 @@ public class VentanaFormularioUsuario extends JDialog {
             txtPassword.setVisible(false);
         }
 
-       
         setupRolField(panelFormularioBase, y++);
         
         panelPrincipal.add(panelFormularioBase, BorderLayout.NORTH);
-        
         
         JScrollPane scrollPane = new JScrollPane(panelEspecifico);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Detalles Específicos del Rol"));
         panelPrincipal.add(scrollPane, BorderLayout.CENTER);
         
-       
         JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnGuardar.addActionListener(e -> guardarUsuario());
         panelBoton.add(btnGuardar);
@@ -146,7 +133,6 @@ public class VentanaFormularioUsuario extends JDialog {
                     RolUsuario nuevoRol = RolUsuario.valueOf((String) comboRol.getSelectedItem());
                     mostrarCamposEspecificos(nuevoRol, false); 
                 } catch (IllegalArgumentException ex) {
-                    
                 }
             });
             gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
@@ -199,7 +185,6 @@ public class VentanaFormularioUsuario extends JDialog {
             gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
             panelEspecifico.add(txtPuesto, gbc);
 
-            // La fecha de inicio solo es editable/visible en MODO EDICIÓN
             if (esEdicion) {
                 gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
                 panelEspecifico.add(new JLabel("Fecha Inicio (ISO):"), gbc);
@@ -279,7 +264,6 @@ public class VentanaFormularioUsuario extends JDialog {
                     double totalGanado = parseDouble(txtTotalGanado.getText(), "Total Ganado");
                     int nivel = parseInt(txtNivel.getText(), "Nivel");
                     
-                    // LLAMADA AL CONSTRUCTOR SIN ID
                     usuarioFinal = new Jugador(nombre, email, passwordStr, ahora, 
                                                saldo, partidas, totalGanado, nivel);
                 } else if (rol == RolUsuario.EMPLEADO || rol == RolUsuario.ADMINISTRADOR) {
@@ -287,11 +271,9 @@ public class VentanaFormularioUsuario extends JDialog {
                     boolean activo = chkActivo.isSelected();
                     
                     if (rol == RolUsuario.ADMINISTRADOR) {
-                        // LLAMADA AL CONSTRUCTOR SIN ID
                         usuarioFinal = new Administrador(nombre, email, passwordStr, ahora, 
                                                          puesto, ahora, activo);
                     } else {
-                        // LLAMADA AL CONSTRUCTOR SIN ID
                         usuarioFinal = new Empleado(nombre, email, passwordStr, ahora, 
                                                     puesto, ahora, activo);
                     }
@@ -299,7 +281,6 @@ public class VentanaFormularioUsuario extends JDialog {
                     throw new IllegalArgumentException("Rol no soportado.");
                 }
             } else {
-                
                 usuarioFinal = usuarioAEditar;
                 usuarioFinal.setNombre(nombre);
                 rol = usuarioAEditar.getRol();
@@ -324,7 +305,7 @@ public class VentanaFormularioUsuario extends JDialog {
             }
             
             if (usuarioFinal != null) {
-                database.guardarUsuario(usuarioFinal); 
+                database.registrarUsuario(usuarioFinal); 
                 JOptionPane.showMessageDialog(this, "Usuario guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 
                 if (ventanaGestionPadre != null) {
@@ -345,8 +326,6 @@ public class VentanaFormularioUsuario extends JDialog {
         }
     }
     
-    
-
     private double parseDouble(String text, String fieldName) throws NumberFormatException {
         try {
             return Double.parseDouble(text.trim());

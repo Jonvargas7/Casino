@@ -16,7 +16,6 @@ public class Propiedades extends java.util.Properties {
         setProperty("highlow", "resources/imagenes/highLow.png");
         setProperty("ruleta", "resources/imagenes/ruleta.png");
 
-        // Aquí usamos exactamente los nombres que tienes en la carpeta (respeta mayúsculas)
         setProperty("a", "resources/imagenes/A.png");
         setProperty("2", "resources/imagenes/2.png");
         setProperty("3", "resources/imagenes/3.png");

@@ -7,14 +7,10 @@ public class Empleado extends Usuario {
     private LocalDateTime fechaInicio;
     private boolean activo;
 
-    // Constructor vacío
     public Empleado() {
         super();
     }
-    
-    /**
-     * Constructor PROTEGIDO usado para CARGAR desde la DB (con ID).
-     */
+ 
     protected Empleado(long id, String nombre, String email, String password, LocalDateTime fechaRegistro, 
                        RolUsuario rol, String puesto, LocalDateTime fechaInicio, boolean activo) {
         super(id, nombre, email, password, fechaRegistro, rol);
@@ -23,9 +19,7 @@ public class Empleado extends Usuario {
         this.activo = activo;
     }
 
-    /**
-     * Constructor PROTEGIDO usado para CREAR un nuevo Empleado (SIN ID).
-     */
+  
     protected Empleado(String nombre, String email, String password, LocalDateTime fechaRegistro, 
                        RolUsuario rol, String puesto, LocalDateTime fechaInicio, boolean activo) {
         super(nombre, email, password, fechaRegistro, rol); // Llama a super sin 'id'
@@ -34,21 +28,15 @@ public class Empleado extends Usuario {
         this.activo = activo;
     }
 
-    /**
-     * Constructor PÚBLICO para CARGAR un Empleado normal (con ID).
-     */
+  
     public Empleado(long id, String nombre, String email, String password, LocalDateTime fechaRegistro, 
                     String puesto, LocalDateTime fechaInicio, boolean activo) {
-        // Llama al constructor protegido con 'id'
         this(id, nombre, email, password, fechaRegistro, RolUsuario.EMPLEADO, puesto, fechaInicio, activo);
     }
     
-    /**
-     * Constructor PÚBLICO para CREAR un nuevo Empleado normal (SIN ID).
-     */
+  
     public Empleado(String nombre, String email, String password, LocalDateTime fechaRegistro, 
                     String puesto, LocalDateTime fechaInicio, boolean activo) {
-        // Llama al constructor protegido sin 'id'
         this(nombre, email, password, fechaRegistro, RolUsuario.EMPLEADO, puesto, fechaInicio, activo);
     }
 
@@ -76,7 +64,5 @@ public class Empleado extends Usuario {
 		this.activo = activo;
 	}
     
-    // Getters y Setters
-// ... (resto de getters, setters y toString)
-// ...
+  
 }
