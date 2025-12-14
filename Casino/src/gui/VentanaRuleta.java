@@ -2,23 +2,19 @@ package gui;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-
 import domain.Jugador;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Random;
-
-
 
 public class VentanaRuleta extends JFrame {
 
     private static final long serialVersionUID = 1L;
     
     
-    private double saldo = 1000.0; 
-
+    private double saldo = 1000.0;
+    
+    
     private final JLabel lblTitulo = new JLabel("Ruleta", SwingConstants.CENTER);
     private final JLabel lblSaldo = new JLabel();
     private final JTextField txtApuesta = new JTextField("10", 8);
@@ -27,18 +23,20 @@ public class VentanaRuleta extends JFrame {
     private final JTextField txtNumero = new JTextField("17", 4);
     private final JButton btnGirar = new JButton("Girar");
     
-   
+    
     private final JLabel lblSalida = new JLabel("Sale: -", SwingConstants.CENTER);
     private final JLabel lblResultado = new JLabel("Listo para apostar", SwingConstants.CENTER); 
 
     private final Random rnd = new Random();
     
-   
+    
     private static final Color COLOR_GANANCIA = new Color(0, 150, 0); 
     private static final Color COLOR_PERDIDA = Color.RED;
-    private static final Color COLOR_CERO = new Color(0, 100, 0); // 
+    private static final Color COLOR_CERO = new Color(0, 100, 0);
 
     public VentanaRuleta(Jugador jugador) {
+        
+        
         setTitle("Ruleta");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(560, 420);
@@ -58,6 +56,10 @@ public class VentanaRuleta extends JFrame {
         lblSalida.setFont(new Font("SansSerif", Font.BOLD, 32)); 
         lblSalida.setForeground(Color.DARK_GRAY);
         
+       
+        lblSalida.setOpaque(true);
+        lblSalida.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
+        
         lblResultado.setFont(new Font("SansSerif", Font.BOLD, 18)); 
         lblResultado.setForeground(Color.BLUE);
         
@@ -65,7 +67,7 @@ public class VentanaRuleta extends JFrame {
         centro.add(lblResultado);
         add(centro, BorderLayout.CENTER);
 
-       
+        
         JPanel controles = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         controles.add(new JLabel("Apuesta"));
         controles.add(txtApuesta);
@@ -78,7 +80,7 @@ public class VentanaRuleta extends JFrame {
         controles.add(btnGirar);
         add(controles, BorderLayout.SOUTH);
 
-       
+        
         JPanel derecha = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
         lblSaldo.setFont(new Font("SansSerif", Font.BOLD, 14));
         derecha.add(new JLabel("SALDO:"));
@@ -128,48 +130,70 @@ public class VentanaRuleta extends JFrame {
     }
     
     
-    private String toHtmlColor(Color c) {
-        return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue());
-    }
-
-   
     private void girar() {
         double a = leerApuesta();
         if (a <= 0) { JOptionPane.showMessageDialog(this, "Apuesta inválida o saldo insuficiente", "Error de Apuesta", JOptionPane.ERROR_MESSAGE); return; }
         
-       
+        
+        
         btnGirar.setEnabled(false);
         txtApuesta.setEnabled(false);
         lblResultado.setText("GIRANDO...");
         lblResultado.setForeground(Color.ORANGE.darker());
         lblSalida.setText("Sale: ?");
+        lblSalida.setBackground(getBackground());
         lblSalida.setForeground(Color.DARK_GRAY);
 
+        
        
-        Timer timer = new Timer(1500, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ((Timer) e.getSource()).stop(); 
-                ejecutarLogicaGiro(a); 
-                btnGirar.setEnabled(true);
-                txtApuesta.setEnabled(true);
+        new Thread(() -> {
+            try {
+                
+                Thread.sleep(1500); 
+                
+                
+                ejecutarLogicaGiro(a);
+
+                
+                SwingUtilities.invokeLater(() -> {
+                   
+                    btnGirar.setEnabled(true);
+                    txtApuesta.setEnabled(true);
+                });
+
+            } catch (InterruptedException e) {
+                
+                Thread.currentThread().interrupt();
+                SwingUtilities.invokeLater(() -> {
+                    btnGirar.setEnabled(true);
+                    txtApuesta.setEnabled(true);
+                    lblResultado.setText("Error de giro.");
+                });
             }
-        });
-        timer.setRepeats(false);
-        timer.start();
+        }).start();
+        
     }
     
-   
+    
     private void ejecutarLogicaGiro(double a) {
         int salido = rnd.nextInt(37); 
         
         
-        Color colorSalida = COLOR_CERO;
-        if (salido != 0) {
-            colorSalida = esRojo(salido) ? Color.RED : Color.BLACK;
+        Color colorSalidaFondo;
+        Color colorSalidaTexto;
+        
+        if (salido == 0) {
+            colorSalidaFondo = COLOR_CERO; 
+            colorSalidaTexto = Color.WHITE;
+        } else if (esRojo(salido)) {
+            colorSalidaFondo = Color.RED;
+            colorSalidaTexto = Color.WHITE;
+        } else {
+            colorSalidaFondo = Color.BLACK;
+            colorSalidaTexto = Color.WHITE;
         }
 
-       
+        
         boolean acierto = false;
         double pago = 0;
         String tipo = cmbTipo.getSelectedItem().toString();
@@ -191,20 +215,20 @@ public class VentanaRuleta extends JFrame {
                 pago = acierto ? a * 35 : -a; 
             }
         } catch (Exception ex) {
-            lblResultado.setText("ERROR: Configuración de apuesta inválida.");
-            lblResultado.setForeground(COLOR_PERDIDA);
+            
             pago = -a; 
         }
 
-      
+        
         saldo += pago;
 
-       
-        String textoSalida = "<html>SALE: <span style='color: " + (colorSalida == Color.BLACK ? "white" : "black") + 
-                             "; background-color: " + toHtmlColor(colorSalida) + 
-                             "; border: 1px solid gray; padding: 4px; border-radius: 4px;'><b>" + salido + "</b></span></html>";
         
-        lblSalida.setText(textoSalida);
+       
+        SwingUtilities.invokeLater(() -> {
+            lblSalida.setText("SALE: " + salido);
+            lblSalida.setBackground(colorSalidaFondo);
+            lblSalida.setForeground(colorSalidaTexto);
+        });
         
         
         Color colorResultado = (pago >= 0) ? COLOR_GANANCIA : COLOR_PERDIDA;
@@ -213,8 +237,7 @@ public class VentanaRuleta extends JFrame {
         
         actualizarSaldo();
         
-       
     }
 
-   
+    
 }

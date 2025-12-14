@@ -14,27 +14,27 @@ public class VentanaFormularioUsuario extends JDialog {
     
     private Database database;
     private Usuario usuarioLogeado;
-    private Usuario usuarioAEditar; // null si es Añadir
+    private Usuario usuarioAEditar; 
     private String rolPermitidoParaCrear; 
     
     private VentanaGestionUsuarios ventanaGestionPadre; 
 
-    // Campos Comunes
+    
     private JTextField txtNombre = new JTextField(20);
     private JTextField txtEmail = new JTextField(20);
     private JPasswordField txtPassword = new JPasswordField(20);
     private JComboBox<String> comboRol; 
     
-    // Campos Específicos
+   
     private JPanel panelEspecifico = new JPanel(new GridBagLayout()); 
-    // -- Jugador --
+    
     private JTextField txtSaldo = new JTextField(20);
     private JTextField txtPartidas = new JTextField(20);
     private JTextField txtTotalGanado = new JTextField(20);
     private JTextField txtNivel = new JTextField(20);
-    // -- Empleado --
+   
     private JTextField txtPuesto = new JTextField(20);
-    private JTextField txtFechaInicio = new JTextField(20); // Se usa en EDICIÓN
+    private JTextField txtFechaInicio = new JTextField(20); 
     private JCheckBox chkActivo = new JCheckBox("Activo");
 
     private JButton btnGuardar = new JButton("Guardar");
@@ -57,7 +57,7 @@ public class VentanaFormularioUsuario extends JDialog {
 
         initComponents();
         
-        // Cargar datos y configurar la interfaz específica
+        
         if (usuarioAEditar != null) {
             cargarDatosSiEsEdicion();
             mostrarCamposEspecificos(usuarioAEditar.getRol(), true); // EDICIÓN
@@ -91,21 +91,21 @@ public class VentanaFormularioUsuario extends JDialog {
         
         int y = 0;
 
-        // --- CAMPOS COMUNES ---
+      
         
-        // Fila 1: Nombre
+        
         gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
         panelFormularioBase.add(new JLabel("Nombre:"), gbc);
         gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
         panelFormularioBase.add(txtNombre, gbc);
 
-        // Fila 2: Email (No editable si se está editando)
+       
         gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
         panelFormularioBase.add(new JLabel("Email:"), gbc);
         gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
         panelFormularioBase.add(txtEmail, gbc);
         
-        // Fila 3: Contraseña (Solo para Añadir)
+        
         if (usuarioAEditar == null) {
             gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
             panelFormularioBase.add(new JLabel("Contraseña:"), gbc);
@@ -115,17 +115,17 @@ public class VentanaFormularioUsuario extends JDialog {
             txtPassword.setVisible(false);
         }
 
-        // Fila 4: Rol
+       
         setupRolField(panelFormularioBase, y++);
         
         panelPrincipal.add(panelFormularioBase, BorderLayout.NORTH);
         
-        // --- CAMPOS ESPECÍFICOS (Se añaden al panelPrincipal.CENTER) ---
+        
         JScrollPane scrollPane = new JScrollPane(panelEspecifico);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Detalles Específicos del Rol"));
         panelPrincipal.add(scrollPane, BorderLayout.CENTER);
         
-        // --- BOTONES ---
+       
         JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnGuardar.addActionListener(e -> guardarUsuario());
         panelBoton.add(btnGuardar);
@@ -146,7 +146,7 @@ public class VentanaFormularioUsuario extends JDialog {
                     RolUsuario nuevoRol = RolUsuario.valueOf((String) comboRol.getSelectedItem());
                     mostrarCamposEspecificos(nuevoRol, false); 
                 } catch (IllegalArgumentException ex) {
-                    // Ignorar
+                    
                 }
             });
             gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
@@ -177,7 +177,7 @@ public class VentanaFormularioUsuario extends JDialog {
             panelEspecifico.add(new JLabel("Saldo (€):"), gbc);
             gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
             panelEspecifico.add(txtSaldo, gbc);
-            // ... (resto de campos de Jugador)
+            
             gbc.gridx = 0; gbc.gridy = y; gbc.anchor = GridBagConstraints.EAST; gbc.weightx = 0.0;
             panelEspecifico.add(new JLabel("Partidas Jugadas:"), gbc);
             gbc.gridx = 1; gbc.gridy = y++; gbc.anchor = GridBagConstraints.WEST; gbc.weightx = 1.0;
@@ -266,7 +266,7 @@ public class VentanaFormularioUsuario extends JDialog {
             RolUsuario rol;
             
             if (usuarioAEditar == null) {
-                // --- Lógica de CREACIÓN: Usando constructores SIN ID ---
+                
                 String rolStr = (usuarioLogeado instanceof Administrador) 
                                 ? (String) comboRol.getSelectedItem() : rolPermitidoParaCrear;
                 rol = RolUsuario.valueOf(rolStr);
@@ -299,7 +299,7 @@ public class VentanaFormularioUsuario extends JDialog {
                     throw new IllegalArgumentException("Rol no soportado.");
                 }
             } else {
-                // --- Lógica de EDICIÓN: El objeto ya tiene ID y se actualiza ---
+                
                 usuarioFinal = usuarioAEditar;
                 usuarioFinal.setNombre(nombre);
                 rol = usuarioAEditar.getRol();
@@ -345,7 +345,7 @@ public class VentanaFormularioUsuario extends JDialog {
         }
     }
     
-    // --- Métodos Auxiliares de Validación (se mantienen igual) ---
+    
 
     private double parseDouble(String text, String fieldName) throws NumberFormatException {
         try {

@@ -15,7 +15,7 @@ public class VentanaGestionUsuarios extends JDialog {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger("VentanaGestionUsuarios");
-    // Formato de fecha para mostrar en la tabla, más legible.
+    
     private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Database database;
@@ -25,7 +25,7 @@ public class VentanaGestionUsuarios extends JDialog {
     private JTable tablaJugadores;
     private JTable tablaEmpleados;
 
-    // Botones de Gestión
+   
     private final JButton btnAnadir = new JButton("➕ Añadir Nuevo Usuario");
     private final JButton btnEditar = new JButton("✏️ Editar Seleccionado");
     private final JButton btnEliminar = new JButton("🗑️ Eliminar Seleccionado");
@@ -47,18 +47,18 @@ public class VentanaGestionUsuarios extends JDialog {
     private void initComponents() {
         tabbedPane = new JTabbedPane();
         
-        // Pestaña 1: Jugadores (Visible para Administradores y Empleados)
+        
         tablaJugadores = new JTable();
         tablaJugadores.setRowHeight(25);
         tablaJugadores.getTableHeader().setReorderingAllowed(false);
         tabbedPane.addTab("Jugadores", new JScrollPane(tablaJugadores));
         
-        // Pestaña 2: Empleados/Admin 
+        
         tablaEmpleados = new JTable();
         tablaEmpleados.setRowHeight(25);
         tablaEmpleados.getTableHeader().setReorderingAllowed(false);
         
-        // --- RESTRICCIÓN DE SEGURIDAD: Solo Administradores ven esta pestaña ---
+     
         if (usuarioLogeado instanceof Administrador) {
             tabbedPane.addTab("Empleados y Administradores", new JScrollPane(tablaEmpleados));
         } else if (usuarioLogeado instanceof Empleado) {
@@ -68,7 +68,7 @@ public class VentanaGestionUsuarios extends JDialog {
 
         add(tabbedPane, BorderLayout.CENTER);
         
-        // Panel de Botones
+      
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         
         panelBotones.add(btnAnadir);
@@ -77,27 +77,24 @@ public class VentanaGestionUsuarios extends JDialog {
 
         add(panelBotones, BorderLayout.SOUTH);
         
-        // Listeners
         btnAnadir.addActionListener(e -> abrirVentanaAnadir());
         btnEditar.addActionListener(e -> abrirVentanaEditar());
         btnEliminar.addActionListener(e -> intentarEliminar());
     }
 
-    /**
-     * Obtiene todos los usuarios y los clasifica para las tablas.
-     */
+   
     private void cargarDatos() {
         try {
             List<Usuario> todosUsuarios = database.obtenerTodosLosUsuarios();
             
-            // 1. Filtrar y cargar Jugadores (Visibles para todos los usuarios de gestión)
+          
             List<Jugador> jugadores = todosUsuarios.stream()
                     .filter(u -> u instanceof Jugador)
                     .map(u -> (Jugador) u)
                     .collect(Collectors.toList());
             cargarTablaJugadores(jugadores);
 
-            // 2. Filtrar y cargar Empleados/Administradores (Solo si la pestaña es visible)
+           
             if (usuarioLogeado instanceof Administrador) {
                 // Filtramos a todos los Empleados (que incluye Administrador)
                 List<Empleado> empleados = todosUsuarios.stream()
@@ -115,10 +112,7 @@ public class VentanaGestionUsuarios extends JDialog {
         }
     }
 
-    /**
-     * Implementación para cargar la tabla de Jugadores.
-     * @param jugadores Lista de objetos Jugador.
-     */
+    
     private void cargarTablaJugadores(List<Jugador> jugadores) {
         String[] columnas = {"ID", "Nombre", "Email", "Saldo", "Partidas", "Ganado", "Nivel", "Registro"};
         DefaultTableModel model = new DefaultTableModel(columnas, 0) {
@@ -153,10 +147,7 @@ public class VentanaGestionUsuarios extends JDialog {
         tablaJugadores.getColumnModel().getColumn(3).setPreferredWidth(70);
     }
 
-    /**
-     * Implementación para cargar la tabla de Empleados y Administradores.
-     * @param empleados Lista de objetos Empleado (incluye Administrador).
-     */
+   
     private void cargarTablaEmpleados(List<Empleado> empleados) {
         String[] columnas = {"ID", "Nombre", "Email", "Rol", "Puesto", "Fecha Inicio", "Activo"};
         DefaultTableModel model = new DefaultTableModel(columnas, 0) {
@@ -173,7 +164,7 @@ public class VentanaGestionUsuarios extends JDialog {
         };
 
         for (Empleado e : empleados) {
-            // Determina el rol de visualización
+           
             String rolDisplay = (e instanceof Administrador) ? "ADMINISTRADOR" : "EMPLEADO";
             
             model.addRow(new Object[]{
@@ -193,18 +184,13 @@ public class VentanaGestionUsuarios extends JDialog {
         tablaEmpleados.getColumnModel().getColumn(6).setPreferredWidth(60); 
     }
     
-    /**
-     * Método auxiliar para que VentanaFormularioUsuario pueda recargar los datos.
-     */
+    
     public void cargarDatosDesdeFormulario() {
         cargarDatos();
     }
 
     
-    // =========================================================
-    // --- MÉTODOS DE GESTIÓN (Añadir, Editar, Eliminar) ---
-    // =========================================================
-
+  
     private void abrirVentanaAnadir() {
         
         String rolForzado = null; 
@@ -220,13 +206,13 @@ public class VentanaGestionUsuarios extends JDialog {
         }
         
         if (tienePermiso) {
-            // Abrir la nueva ventana de formulario para Añadir (usuarioAEditar = null)
+            
             VentanaFormularioUsuario ventana = new VentanaFormularioUsuario(
                 (JFrame) SwingUtilities.getWindowAncestor(this), 
                 this, 
                 database, 
                 usuarioLogeado, 
-                (Usuario) null, // <<-- ¡CORRECCIÓN CLAVE! Cast de null a Usuario
+                (Usuario) null, 
                 rolForzado
             );
             ventana.setVisible(true);
@@ -245,7 +231,7 @@ public class VentanaGestionUsuarios extends JDialog {
             return;
         }
         
-        // --- LÓGICA DE PERMISOS DE EDITAR ---
+      
         boolean esAutoEdicion = seleccionado.getId() == usuarioLogeado.getId();
         boolean tienePermiso = false;
 
@@ -297,7 +283,7 @@ public class VentanaGestionUsuarios extends JDialog {
              return;
         }
         
-        // --- LÓGICA DE PERMISOS DE ELIMINAR ---
+        
         boolean tienePermiso = false;
         String rolSeleccionado = seleccionado.getRol().toString();
 
@@ -346,11 +332,9 @@ public class VentanaGestionUsuarios extends JDialog {
         }
     }
     
-    /**
-     * Método auxiliar para obtener el usuario seleccionado en la pestaña activa.
-     */
+    
     private Usuario obtenerUsuarioSeleccionado() {
-        // Obtener la tabla activa
+        
         JTable tablaActiva;
         try {
             tablaActiva = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
@@ -361,10 +345,10 @@ public class VentanaGestionUsuarios extends JDialog {
         int filaSeleccionada = tablaActiva.getSelectedRow();
         
         if (filaSeleccionada == -1) {
-            return null; // No hay fila seleccionada
+            return null; 
         }
 
-        // Obtener el ID (primera columna)
+        
         Object idObjeto = tablaActiva.getValueAt(filaSeleccionada, 0);
         long id = -1;
         
